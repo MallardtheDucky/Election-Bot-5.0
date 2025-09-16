@@ -1858,30 +1858,47 @@ class PresCampaignActions(commands.Cog):
 
     # Set up autocomplete for group commands
     def setup_autocomplete(self):
-        # Set up autocomplete for canvassing
-        pres_campaign_group.get_command('canvassing').autocomplete('state')(self.state_autocomplete_generic)
-        pres_campaign_group.get_command('canvassing').autocomplete('target')(self.target_autocomplete_generic)
-        
-        # Set up autocomplete for donor
-        pres_campaign_group.get_command('donor').autocomplete('state')(self.state_autocomplete_generic)
-        pres_campaign_group.get_command('donor').autocomplete('target')(self.target_autocomplete_generic)
-        
-        # Set up autocomplete for ad
-        pres_campaign_group.get_command('ad').autocomplete('state')(self.state_autocomplete_generic)
-        pres_campaign_group.get_command('ad').autocomplete('target')(self.target_autocomplete_generic)
-        
-        # Set up autocomplete for poster
-        pres_campaign_group.get_command('poster').autocomplete('state')(self.state_autocomplete_generic)
-        pres_campaign_group.get_command('poster').autocomplete('target')(self.target_autocomplete_generic)
-        
-        # Set up autocomplete for speech
-        pres_campaign_group.get_command('speech').autocomplete('state')(self.state_autocomplete_generic)
-        pres_campaign_group.get_command('speech').autocomplete('ideology')(self.ideology_autocomplete_generic)
-        pres_campaign_group.get_command('speech').autocomplete('target')(self.target_autocomplete_generic)
-        
-        # Set up autocomplete for polls
-        pres_poll_group.get_command('media_poll').autocomplete('candidate_name')(self.target_autocomplete_generic)
+        try:
+            # Set up autocomplete for canvassing
+            canvassing_cmd = pres_campaign_group.get_command('canvassing')
+            if canvassing_cmd:
+                canvassing_cmd.autocomplete('state')(self.state_autocomplete_generic)
+                canvassing_cmd.autocomplete('target')(self.target_autocomplete_generic)
 
+            # Set up autocomplete for donor
+            donor_cmd = pres_campaign_group.get_command('donor')
+            if donor_cmd:
+                donor_cmd.autocomplete('state')(self.state_autocomplete_generic)
+                donor_cmd.autocomplete('target')(self.target_autocomplete_generic)
+
+            # Set up autocomplete for ad
+            ad_cmd = pres_campaign_group.get_command('ad')
+            if ad_cmd:
+                ad_cmd.autocomplete('state')(self.state_autocomplete_generic)
+                ad_cmd.autocomplete('target')(self.target_autocomplete_generic)
+
+            # Set up autocomplete for poster
+            poster_cmd = pres_campaign_group.get_command('poster')
+            if poster_cmd:
+                poster_cmd.autocomplete('state')(self.state_autocomplete_generic)
+                poster_cmd.autocomplete('target')(self.target_autocomplete_generic)
+
+            # Set up autocomplete for speech
+            speech_cmd = pres_campaign_group.get_command('speech')
+            if speech_cmd:
+                speech_cmd.autocomplete('state')(self.state_autocomplete_generic)
+                speech_cmd.autocomplete('ideology')(self.ideology_autocomplete_generic)
+                speech_cmd.autocomplete('target')(self.target_autocomplete_generic)
+
+            # Set up autocomplete for polls
+            media_poll_cmd = pres_poll_group.get_command('media_poll')
+            if media_poll_cmd:
+                media_poll_cmd.autocomplete('candidate_name')(self.target_autocomplete_generic)
+
+            print("Autocomplete setup completed successfully")
+        except Exception as e:
+            print(f"Error setting up autocomplete: {e}")
+            # Continue without autocomplete rather than failing completely
     
 
     async def _get_presidential_candidate_choices(self, interaction: discord.Interaction, current: str):
@@ -2968,29 +2985,57 @@ class PresCampaignActions(commands.Cog):
 
 
 async def setup(bot):
+    # Store existing commands before any modifications
+    existing_commands_before = bot.tree.get_commands()
+    existing_names_before = [cmd.name for cmd in existing_commands_before]
+    print(f"PRES_CAMPAIGN_SETUP: Commands before setup: {existing_names_before}")
+    
     cog = PresCampaignActions(bot)
     cog.setup_autocomplete()  # Set up autocomplete after creating the cog
+
+    # Check if command groups are already registered, if not add them
+    existing_commands = bot.tree.get_commands()
+    existing_groups = [cmd.name for cmd in existing_commands if hasattr(cmd, 'name')]
+
+    # Only add groups if they don't exist
+    if 'pres_campaign' not in existing_groups:
+        try:
+            bot.tree.add_command(pres_campaign_group)
+            print("PRES_CAMPAIGN_SETUP: Added pres_campaign group")
+        except Exception as e:
+            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_campaign group: {e}")
+    else:
+        print("PRES_CAMPAIGN_SETUP: pres_campaign group already exists, skipping")
+
+    if 'pres_admin' not in existing_groups:
+        try:
+            bot.tree.add_command(pres_admin_group)
+            print("PRES_CAMPAIGN_SETUP: Added pres_admin group")
+        except Exception as e:
+            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_admin group: {e}")
+    else:
+        print("PRES_CAMPAIGN_SETUP: pres_admin group already exists, skipping")
+
+    if 'pres_poll' not in existing_groups:
+        try:
+            bot.tree.add_command(pres_poll_group)
+            print("PRES_CAMPAIGN_SETUP: Added pres_poll group")
+        except Exception as e:
+            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_poll group: {e}")
+    else:
+        print("PRES_CAMPAIGN_SETUP: pres_poll group already exists, skipping")
+
+    # Verify that existing commands are still there
+    commands_after = bot.tree.get_commands()
+    names_after = [cmd.name for cmd in commands_after]
+    print(f"PRES_CAMPAIGN_SETUP: Commands after setup: {names_after}")
     
-    # Only add command groups if they haven't been added by command_groups.py
-    try:
-        bot.tree.add_command(pres_campaign_group)
-    except Exception as e:
-        if "already registered" not in str(e).lower():
-            raise e
-        print(f"pres_campaign group already registered (likely by command_groups.py)")
-    
-    try:
-        bot.tree.add_command(pres_admin_group)
-    except Exception as e:
-        if "already registered" not in str(e).lower():
-            raise e
-        print(f"pres_admin group already registered (likely by command_groups.py)")
-    
-    try:
-        bot.tree.add_command(pres_poll_group)
-    except Exception as e:
-        if "already registered" not in str(e).lower():
-            raise e
-        print(f"pres_poll group already registered (likely by command_groups.py)")
-    
+    # Check for target commands specifically
+    target_commands = ['view_general_campaign', 'admin_view_all_campaign_points']
+    for target in target_commands:
+        if target in names_after:
+            print(f"PRES_CAMPAIGN_SETUP: ✅ {target} preserved after setup")
+        else:
+            print(f"PRES_CAMPAIGN_SETUP: ❌ {target} LOST during setup")
+
     await bot.add_cog(cog)
