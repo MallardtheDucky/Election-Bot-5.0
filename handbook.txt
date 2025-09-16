@@ -1,0 +1,2003 @@
+
+
+
+# Election Bot Handbook
+
+## Table of Contents
+1. Getting Started
+2. Basic Election Management
+3. Campaign Strategies
+4. Demographics & Targeting (Updated System)
+5. Momentum System
+6. Special Elections (New Feature)
+7. Presidential Campaigns
+8. Party Management
+9. Advanced Strategies
+10. Admin Tools
+11. Troubleshooting
+
+---
+
+## 1. Getting Started
+
+### Initial Setup
+
+**Step 1: Basic Configuration**
+1. Use `/setup add_region` to add US states to your server
+   - Add key battleground states first: Pennsylvania, Florida, Michigan, Wisconsin
+   - Include safe red states: Texas, Alabama, Wyoming
+   - Include safe blue states: California, New York, Massachusetts
+   - Add swing states: Arizona, Georgia, North Carolina
+
+2. Use `/setup set_start` to set your election start date
+   - Format: YYYY-MM-DD
+   - Example: `/setup set_start 2024-01-01`
+   - This determines when your election cycle begins
+
+3. Use `/setup set_announcement_channel` for election updates
+   - Choose a channel where all major election events will be announced
+   - This includes phase changes, major victories, and results
+
+4. Use `/party admin create` to create custom parties if needed
+   - Default parties: Democratic Party (Blue), Republican Party (Red), Independent (Purple)
+   - Custom parties allow for roleplay scenarios or alternative political systems
+   - Example: `/party admin create name:"Green Party" abbreviation:"G" color:"00FF00"`
+
+5. Use `/election admin set_seats` to configure election seats
+   - Sets up all available offices: Senate, House, Governor, President, VP
+   - Determines which seats are up for election in each cycle
+
+**Step 2: Understanding Election Phases**
+
+The bot cycles through these phases automatically:
+
+- **Signup Phase** (Duration: Varies)
+  - Candidates register for elections using `/signup`
+  - Presidential candidates use `/pres_signup`
+  - VP candidates use `/vp_signup`
+  - This is the planning phase where coalitions form
+
+- **Primary Campaign** (Duration: Usually 2-4 weeks RP time)
+  - Candidates campaign within their parties
+  - Use demographic appeals and state-specific strategies
+  - Build momentum and name recognition
+  - Form alliances and endorsements
+
+- **Primary Voting** (Duration: 1-3 days RP time)
+  - Automated or admin-controlled voting
+  - Winners become party nominees
+  - Delegates are allocated in presidential races
+
+- **General Campaign** (Duration: Usually 4-8 weeks RP time)
+  - Party nominees face off
+  - Momentum system becomes crucial
+  - Demographic targeting reaches peak importance
+  - Final coalition building
+
+- **General Voting** (Duration: 1-3 days RP time)
+  - Final election
+  - All previous campaign work pays off
+  - Winners determined by accumulated points and momentum
+
+- **Governance** (Duration: Until next election cycle)
+  - Winners serve their terms
+  - Set up for next election cycle
+
+**Step 3: Time Management**
+
+Understanding the time system is crucial:
+
+- Use `/time current_time` to check the current election phase
+- Real time vs RP time: Admins can set how fast time moves
+- Example: `/time set_time_scale 60` means 1 real hour = 1 RP day
+- Elections automatically progress through phases based on configured timing
+
+**Step 4: Basic Commands Every User Should Know**
+
+Essential commands for all participants:
+- `/commands` - View all available commands
+- `/time current_time` - Check current phase and date
+- `/signup` - Register as a candidate (during signup phase)
+- `/speech` - Give a basic campaign speech (1 hour cooldown)
+- `/momentum status` - Check state momentum
+- `/demographic_status` - View your demographic progress (presidential candidates)
+
+---
+
+## 2. Basic Election Management
+
+### Setting Up Elections
+
+**Comprehensive Seat Configuration**
+
+The election system supports multiple office types:
+
+1. **Senate Seats** (6-year terms)
+   - 3 senators per state in the default configuration
+   - Staggered elections (different classes expire different years)
+   - High-profile races that affect national politics
+
+2. **House Seats** (2-year terms)
+   - Multiple districts per state based on population
+   - All seats up for election every cycle
+   - More local, district-focused campaigns
+   - **Eligible for Special Elections** when vacant
+
+3. **Governor Seats** (4-year terms)
+   - One per state
+   - Significant state-level executive power
+   - Important for party momentum
+
+4. **National Offices** (4-year terms)
+   - President and Vice President
+   - Highest-profile races
+   - Electoral College system simulation
+
+**Election Timing Configuration**
+
+Proper timing is essential for realistic elections:
+
+```
+Example Timeline:
+- January-March: Signup Phase
+- April-June: Primary Campaign
+- July: Primary Elections
+- August-October: General Campaign
+- November: General Election
+- December-January: Transition/Governance
+```
+
+Use `/time set_time_scale` to control pacing:
+- Fast pace: 30 (30 real minutes = 1 RP day)
+- Medium pace: 60 (1 real hour = 1 RP day)
+- Slow pace: 120 (2 real hours = 1 RP day)
+
+### Candidate Registration Process
+
+**General Election Signup**
+
+During signup phases, candidates use:
+- `/signup` for general elections (Senate, House, Governor)
+- Must specify: name, party, seat, region/state
+- Each user can run for multiple offices if allowed
+- Withdrawals possible with `/withdraw_signup`
+
+**Presidential Campaign Registration**
+
+Presidential campaigns are more complex:
+
+1. **Presidential Candidate Registration**
+   ```
+   /pres_signup name:"John Smith" party:"Democratic Party" 
+   ideology:"Liberal" economic:"Progressive" social:"Liberal" 
+   government:"Big Government" axis:"Left"
+   ```
+
+2. **Vice Presidential Registration**
+   ```
+   /vp_signup name:"Jane Doe" party:"Democratic Party"
+   ideology:"Moderate" economic:"Centrist" social:"Liberal"
+   government:"Moderate" axis:"Center-Left"
+   presidential_candidate:"John Smith"
+   ```
+
+3. **Ticket Formation**
+   - Presidential candidate must accept VP with `/accept_vp`
+   - Creates official ticket for general election
+   - Both candidates share resources and momentum
+
+### Managing the Election Process
+
+**Phase Transitions**
+
+Elections progress automatically, but admins can intervene:
+
+- `/time set_current_time` - Jump to specific date/phase
+- Monitor transitions through announcement channel
+- Handle disputes or special circumstances
+- Adjust timing if needed for server activity
+
+**Vote Management**
+
+Admins have several options for handling votes:
+
+1. **Automated Voting** (Recommended)
+   - System calculates results based on campaign activity
+   - Points, momentum, and demographics determine outcomes
+   - Most realistic and fair approach
+
+2. **Manual Vote Setting**
+   ```
+   /election vote admin_bulk_set_votes seat_id:"SEN-CA-1" 
+   vote_data:"John Smith:25000,Jane Doe:18000,Bob Wilson:12000"
+   ```
+
+3. **Hybrid Approach**
+   - Let system calculate most results
+   - Manually adjust close races for drama
+   - Set realistic vote totals for immersion
+
+**Results and Announcements**
+
+The system automatically:
+- Announces phase changes
+- Declares winners
+- Updates seat holders
+- Advances term dates for next cycle
+
+Admins can enhance this with:
+- Custom victory speeches
+- Transition ceremonies
+- Next cycle planning announcements
+
+---
+
+## 3. Campaign Strategies
+
+### Understanding Campaign Actions (Universal 1-Hour Cooldowns)
+
+**MAJOR UPDATE: All campaign actions now have unified 1-hour cooldowns** regardless of action type. This creates more strategic timing decisions and prevents spam while allowing consistent campaign activity.
+
+Each campaign action serves a specific purpose and has different effectiveness:
+
+**1. Speeches** (`/speech`)
+- **Purpose**: Build general support and name recognition with ideology bonuses
+- **Requirements**: 700-3000 characters, reply within 5 minutes
+- **Effectiveness**: 1.5-3.0 points based on length and state ideology match
+- **Stamina Cost**: 1.5
+- **Cooldown**: 1 hour (unified)
+- **Best Used**: Early campaign, building base support, swing states
+- **NEW**: Ideology alignment with state provides +0.5% bonus
+
+**2. Canvassing** (`/canvassing`)
+- **Purpose**: Target specific regions with ground game
+- **Requirements**: 100-300 character message
+- **Effectiveness**: High in targeted regions, momentum multipliers apply
+- **Stamina Cost**: 1
+- **Cooldown**: 1 hour (unified)
+- **Best Used**: Swing states, competitive districts
+- **Tips**: Focus on states where you're competitive
+
+**3. Advertisements** (`/ad`)
+- **Purpose**: Wide reach across multiple regions
+- **Requirements**: Video file upload (25MB max), reply within 5 minutes
+- **Effectiveness**: 0.5-1% polling boost, high impact
+- **Stamina Cost**: 1.5
+- **Cooldown**: 1 hour (unified)
+- **Best Used**: Late campaign, major media markets
+- **Tips**: Save for crucial moments, requires video upload
+
+**4. Posters** (`/poster`)
+- **Purpose**: Cost-efficient way to build name recognition
+- **Requirements**: Image upload (10MB max)
+- **Effectiveness**: 0.25-0.5% polling boost, consistent presence
+- **Stamina Cost**: 1
+- **Cooldown**: 1 hour (unified)
+- **Best Used**: Continuous presence, early campaign
+- **Tips**: Maintain steady presence, cost-effective option
+
+**5. Donor Appeals** (`/donor`)
+- **Purpose**: High-risk, high-reward fundraising
+- **Requirements**: 400-3000 characters, reply within 5 minutes
+- **Effectiveness**: Up to 3% boost based on length
+- **Stamina Cost**: 1.5
+- **Cooldown**: 1 hour (unified)
+- **Side Effect**: +5 corruption (scandal risk)
+- **Best Used**: Crisis response, building war chest
+- **Warning**: High corruption leads to scandals
+
+### Advanced Action Strategies
+
+**Timing Your Actions (New Unified System)**
+
+With 1-hour universal cooldowns, timing becomes critical:
+
+1. **Peak Activity Windows**
+   - Schedule actions during server's peak hours
+   - Coordinate with allies to avoid overlap
+   - Plan around opponent's likely action times
+
+2. **Action Cycling Strategy**
+   - Use different action types in rotation
+   - Example: Speech → Poster → Canvassing → Ad → repeat
+   - Maintains constant presence without waste
+
+3. **Crisis Response Planning**
+   - Always keep one action "in reserve" for emergencies
+   - Quick response to opponent attacks or scandals
+   - Coordinate rapid response with campaign team
+
+**Regional Targeting Strategy**
+
+**Tier 1: Must-Win States**
+- Your party's traditional strongholds
+- States where you lead in early polling
+- Focus 40% of your campaign resources here
+- Never neglect these states
+
+**Tier 2: Competitive States**
+- True swing states
+- States where you trail by <10 points
+- Focus 50% of your campaign resources here
+- Where elections are won and lost
+
+**Tier 3: Stretch Goals**
+- States where you trail by 10-20 points
+- Opposition strongholds with potential
+- Focus 10% of your campaign resources here
+- Only target if you're ahead elsewhere
+
+**Action Effectiveness by Region Type**
+
+Different actions work better in different types of areas:
+
+- **Urban Areas**: Ads and demographic appeals work best
+- **Suburban Areas**: Canvassing and speeches effective
+- **Rural Areas**: Speeches and poster campaigns resonate
+- **Swing Areas**: All actions effective, focus on momentum
+
+### Resource Management
+
+**Stamina System**
+
+Every action costs stamina, which regenerates over time:
+
+- **Total Stamina**: 100 for general candidates, 200 for presidential
+- **Regeneration**: 50 per day (general), 100 per day (presidential)
+- **Critical Threshold**: Below 20 stamina = reduced effectiveness
+- **Emergency Reserve**: Always keep 10-15 stamina for responses
+
+**Stamina Optimization Strategies**
+
+1. **Steady Pace Strategy** (Recommended)
+   - Use 1-2 actions per day consistently
+   - Allows for emergency responses
+   - Sustainable throughout campaign
+   - Best for: Most campaigns
+
+2. **Front-Loading Strategy**
+   - Spend heavily early to build momentum
+   - Risk: May run out of stamina for final push
+   - Best for: Underdogs who need early attention
+
+3. **Back-Loading Strategy**
+   - Conserve stamina for final weeks
+   - Risk: May fall too far behind early
+   - Best for: Frontrunners with name recognition
+
+**Cooldown Management (Critical)**
+
+With unified 1-hour cooldowns, planning is essential:
+
+- **Track Your Timing**: Note exactly when each action was used
+- **Plan Ahead**: Schedule actions during peak server activity
+- **Coordinate**: If running with allies, stagger your actions
+- **Emergency Actions**: Always have an action available for crisis response
+
+### Coalition Building and Alliances
+
+**Formal Alliances**
+
+- **Running Mates**: Presidential tickets share resources and momentum
+- **Party Unity**: Support other candidates from your party
+- **Cross-Party Deals**: Sometimes useful in complex multi-party scenarios
+
+**Informal Coordination**
+
+- **Resource Sharing**: Help allies when you're not campaigning
+- **Strategic Timing**: Coordinate major announcements
+- **Opposition Research**: Share intelligence about opponents
+- **Crisis Management**: Support allies during scandals or attacks
+
+---
+
+## 4. Demographics & Targeting (Updated No-Threshold System)
+
+### **MAJOR SYSTEM UPDATE: No More Thresholds**
+
+The demographic system has been completely overhauled. **Demographic groups no longer have point thresholds to reach**. Instead, the system focuses on:
+
+- **State Multiplier Effects**: Small (0.05x), Moderate (0.10x), Strong (0.25x)
+- **Continuous Scaling**: Every point counts, no arbitrary thresholds
+- **Conflict System**: Targeting opposing demographics creates backlash
+- **Strategic Depth**: More nuanced coalition building
+
+### Understanding the New Demographic System
+
+**Complete Demographic List (No Thresholds)**
+
+1. **Geographic Demographics**
+   - Urban Voters
+   - Suburban Voters
+   - Rural Voters
+
+2. **Religious Demographics**
+   - Evangelical Christians
+
+3. **Racial/Ethnic Demographics**
+   - African American Voters
+   - Latino/Hispanic Voters
+   - Asian American Voters
+   - Native American Voters
+
+4. **Economic Demographics**
+   - Blue-Collar / Working-Class Voters
+   - College-Educated Professionals
+   - Wealthy / High-Income Voters
+   - Low-Income Voters
+   - Tech & Innovation Workers
+
+5. **Age Demographics**
+   - Young Voters (18–29)
+   - Senior Citizens (65+)
+
+6. **Special Interest Demographics**
+   - Military & Veteran Voters
+   - LGBTQ+ Voters
+   - Immigrant Communities
+   - Environmental & Green Voters
+   - Gun Rights Advocates
+
+### State Demographic Multipliers
+
+Every state has different demographic compositions that multiply your effectiveness:
+
+**Multiplier System**
+- **Strong (0.25x)**: Demographics very influential in that state
+- **Moderate (0.10x)**: Average influence
+- **Small (0.05x)**: Limited influence
+
+**Example: Campaigning for Rural Voters**
+- **Strong States**: Alabama, Montana, Wyoming (0.25x multiplier)
+- **Moderate States**: Colorado, Pennsylvania (0.10x multiplier)
+- **Small States**: California, New York (0.05x multiplier)
+
+**Strategic Implications**
+A 1.0 point demographic appeal becomes:
+- Alabama: 0.25 points (very effective)
+- Colorado: 0.10 points (moderately effective)
+- California: 0.05 points (barely effective)
+
+### Enhanced Conflict System
+
+**Understanding Backlash**
+
+The system includes a sophisticated backlash mechanism based on **continuous scaling** rather than thresholds:
+
+**Backlash Triggers**
+- **High Investment**: Spending significant points in one demographic
+- **Opposing Groups**: Targeting demographics that conflict with each other
+- **Geographic Mismatches**: Campaigning for demographics in hostile states
+
+**Major Conflict Pairs**
+- Urban Voters ↔ Rural Voters
+- Young Voters ↔ Senior Citizens
+- Gun Rights Advocates ↔ Environmental Voters
+- Evangelical Christians ↔ LGBTQ+ Voters
+- Blue-Collar Workers ↔ College-Educated Professionals
+- Wealthy Voters ↔ Low-Income Voters
+
+**Complex Conflict Networks**
+
+Some demographics have multiple conflicts:
+- Gun Rights Advocates oppose: Environmental Voters, Urban Voters, College-Educated Professionals, most minority groups
+- Tech Workers oppose: Blue-Collar Workers, Senior Citizens, Gun Rights Advocates
+
+### Demographic Campaign Strategies (Updated)
+
+**1. Focused Excellence Strategy**
+
+Pick 2-3 compatible demographics and maximize effectiveness:
+
+**Example Progressive Coalition**
+- Urban Voters (target high-urban states like CA, NY, IL)
+- College-Educated Professionals (target educated suburbs)
+- Environmental Voters (target green-conscious states like WA, OR)
+
+**Execution**
+- Campaign ONLY in states where these demographics are strong
+- Ignore states where your demographics are weak
+- Accept that you'll lose rural/conservative areas
+- Build overwhelming strength in favorable areas
+
+**2. Broad Appeal Strategy**
+
+Try to appeal to many demographics without triggering major backlash:
+
+**Example Centrist Approach**
+- Target demographics with fewer conflicts
+- Avoid the most polarizing groups
+- Example: Suburban Voters + Military Veterans + Senior Citizens
+- Campaign in diverse states to minimize conflict exposure
+
+**3. Counter-Programming Strategy**
+
+Deliberately target your opponent's coalition:
+
+**Disruption Tactics**
+- If opponent is strong with Young Voters, target Senior Citizens in same states
+- Use backlash system to weaken opponent's base
+- Force opponent to defend their coalition
+- Particularly effective in primaries
+
+**4. Geographic Specialization Strategy**
+
+Completely dominate specific types of states:
+
+**Example Rural Dominance**
+- Focus only on Rural Voters + Gun Rights Advocates + Evangelical Christians
+- Campaign exclusively in rural-strong states
+- Accept complete loss in urban areas
+- Build unstoppable coalition in your geographic base
+
+### Demographic Action Types (Updated)
+
+**1. Demographic Speeches** (`/demographic_speech`)
+- **Points Gained**: 0.5-1.5 based on speech length and quality
+- **Stamina Cost**: 2.0
+- **Cooldown**: 8 hours (separate from general actions)
+- **Requirements**: 400-2000 character speech text
+- **Best For**: Major policy announcements, rallies
+
+**2. Demographic Posters** (`/demographic_poster`)
+- **Points Gained**: 0.3-0.8 (random)
+- **Stamina Cost**: 1.5
+- **Cooldown**: 6 hours (separate from general actions)
+- **Requirements**: Image upload
+- **Best For**: Consistent presence, visual messaging
+
+**3. Demographic Ads** (`/demographic_ad`)
+- **Points Gained**: 0.8-1.5 (random)
+- **Stamina Cost**: 2.5
+- **Cooldown**: 10 hours (separate from general actions)
+- **Requirements**: Video upload (25MB max)
+- **Best For**: High-impact moments, major media markets
+
+### Advanced Demographic Tactics (Updated)
+
+**Geographic Optimization**
+
+Use state multipliers to maximize efficiency:
+
+**Research Phase**
+1. Use `/view_state_demographics` to see all state multipliers
+2. Identify states where your target demographics are strong
+3. Plan campaign routes focusing on favorable states
+4. Ignore states where your demographics are weak
+
+**Execution Phase**
+1. Campaign for Rural Voters ONLY in Montana, Wyoming, Alabama
+2. Campaign for Urban Voters ONLY in California, New York, Illinois
+3. Use Suburban Voters in purple states like Pennsylvania, Michigan
+
+**No-Threshold Optimization**
+
+Without thresholds, every point matters:
+
+**Continuous Investment**
+- No "reaching threshold and stopping"
+- Every additional point provides value
+- Focus on multiplier efficiency over raw points
+- 100 points in a 0.25x state = 25 effective points
+- 400 points in a 0.05x state = 20 effective points
+
+**Conflict Avoidance**
+
+Since there are no thresholds to "safely reach":
+
+**Smart Coalition Building**
+- Monitor backlash carefully as you build
+- Consider geographic separation of conflicting demographics
+- Use different states for different parts of your coalition
+- Example: Rural campaign in Montana, Urban campaign in California
+
+---
+
+## 5. Momentum System
+
+### Understanding Political Momentum
+
+The momentum system simulates how political parties gain and lose influence in states based on campaign activity, scandals, and voter sentiment. It's a dynamic system that can dramatically alter election outcomes.
+
+**Core Momentum Mechanics**
+
+**Momentum Accumulation**
+- Successful campaign actions build momentum
+- Momentum multiplies the effectiveness of future actions
+- High momentum makes everything easier
+- Momentum decays over time without activity
+
+**Momentum Vulnerability**
+- Parties with high momentum (50+ points) become vulnerable
+- Opponents can trigger "momentum collapse"
+- Collapses cause massive momentum loss (30-70%)
+- Vulnerable parties have warning indicators (⚠️)
+
+**State-Specific System**
+- Each state tracks momentum separately for each party
+- State political lean affects momentum gain rates
+- Different states have different volatility levels
+- Momentum affects polling and final vote calculations
+
+### State Political Leans
+
+Every state has a baseline political lean that affects momentum:
+
+**Lean Intensities and Effects**
+- **Strong Lean** (1.5x momentum gain): Deep red/blue states
+- **Moderate Lean** (1.2x momentum gain): Typical partisan states  
+- **Weak Lean** (1.0x momentum gain): Light red/blue states
+- **Swing State** (0.8x momentum gain): True purple states
+
+**Examples by Category**
+- **Strong Republican**: Alabama, Wyoming, Idaho
+- **Moderate Republican**: Texas, Georgia, Ohio
+- **Weak Republican**: Florida, North Carolina
+- **Swing States**: Pennsylvania, Michigan, Wisconsin
+- **Weak Democratic**: Virginia, Colorado, Nevada
+- **Moderate Democratic**: Illinois, Oregon, Connecticut
+- **Strong Democratic**: California, Massachusetts, Hawaii
+
+### Building Momentum
+
+**Primary Momentum Sources**
+
+1. **Successful Campaign Actions**
+   - Speeches, ads, canvassing all build momentum
+   - More effective actions = more momentum gained
+   - Consistent activity in a state compounds momentum
+
+2. **Demographic Targeting Success**
+   - Effective demographic campaigns create lasting momentum
+   - Geographic targeting multiplies momentum gains
+   - No longer tied to threshold achievement
+
+3. **Coalition Building**
+   - Endorsements from local figures
+   - Cross-party cooperation in some scenarios
+   - Grassroots organization building
+
+**Momentum Building Strategies**
+
+**1. Fortress Strategy**
+- Pick 2-3 states to completely dominate
+- Campaign relentlessly in these states
+- Build massive momentum reserves
+- Use as launching pad for expansion
+
+**2. Expansion Strategy**
+- Start with natural strongholds
+- Gradually expand to competitive states
+- Maintain presence everywhere
+- More risky but higher potential reward
+
+**3. Surgical Strategy**
+- Focus on specific types of states
+- Example: Target only suburban swing states
+- Deep expertise in chosen battlegrounds
+- Efficient resource allocation
+
+### Momentum Collapse System
+
+**Vulnerability Triggers**
+- Momentum above 50.0 points creates vulnerability
+- Vulnerability marked with ⚠️ in status displays
+- Multiple party members can trigger collapses
+- 6-hour cooldown between collapse attempts
+
+**Collapse Mechanics**
+- Reduces momentum by 30-70% of current total
+- Affected party loses momentum immediately
+- May trigger state lean shifts in extreme cases
+- Creates opportunities for opponents
+
+**Defensive Strategies**
+
+**Momentum Management**
+- Monitor momentum levels carefully
+- Consider deliberately reducing momentum before vulnerability
+- Build momentum in multiple states to spread risk
+- Coordinate with party members for defense
+
+**Counter-Collapse Tactics**
+- Keep some party members ready to trigger collapses
+- Monitor opponent momentum for opportunities
+- Time collapse attempts for maximum impact
+- Coordinate multiple collapse attempts if possible
+
+**Recovery Strategies**
+- Diversify momentum across multiple states
+- Have backup campaign plans ready
+- Use collapses as opportunity to pivot strategy
+- Rally party supporters after opponent attacks
+
+### Advanced Momentum Tactics
+
+**Momentum Warfare**
+
+**Offensive Operations**
+1. **Vulnerability Creation**
+   - Force opponents to build high momentum
+   - Create single-state dependencies
+   - Time attacks for maximum disruption
+
+2. **Collapse Timing**
+   - Strike during crucial campaign phases
+   - Coordinate with major news cycles
+   - Target states where opponent needs momentum most
+
+3. **Chain Reactions**
+   - One collapse can create vulnerability elsewhere
+   - Target interconnected state strategies
+   - Force opponent into defensive positions
+
+**Defensive Operations**
+
+1. **Redundancy Building**
+   - Never depend on single state for momentum
+   - Build overlapping momentum networks
+   - Create multiple paths to victory
+
+2. **Early Warning Systems**
+   - Monitor opponent party member activity
+   - Track momentum levels across all states
+   - Prepare rapid response capabilities
+
+3. **Damage Control**
+   - Have crisis communication plans ready
+   - Practice rapid momentum rebuilding
+   - Maintain reserve campaign resources
+
+---
+
+## 6. Special Elections (New Feature)
+
+### Overview
+
+Special elections are called when House seats become vacant outside of regular election cycles. They follow a fast-paced 4-day timeline with unique mechanics designed for quick, intense campaigns.
+
+**Special Election Timeline**
+- **Day 1**: Signup Phase (24 hours)
+- **Days 2-4**: Campaign Phase (72 hours)
+- **End of Day 4**: Results declared
+
+### Special Election System
+
+**Eligibility and Requirements**
+- **Seats Eligible**: Only House seats (REP- or District seats)
+- **User Participation**: Anyone can participate, not just registered candidates
+- **Target System**: Must specify target candidate for campaign actions
+- **No Regular Election Impact**: Separate from main election cycle
+
+**Special Election Mechanics**
+
+**Signup Phase (24 hours)**
+```
+/special signup candidate_name:"Your Name" party:"Your Party"
+```
+- Multiple users can participate regardless of regular election status
+- Get seat information and timeline details
+- Starting stats: 100 stamina, 0 points
+
+**Campaign Phase (72 hours)**
+- All campaign actions have 1-hour cooldowns
+- Actions require target candidate specification
+- Stamina system: Start with 100, actions cost 15-25 stamina
+- No stamina regeneration during the short campaign
+
+### Special Election Commands
+
+**User Commands:**
+- `/special signup` - Register for an active special election
+- `/special speech` - Give campaign speech (1 hour cooldown, 2-4 points)
+- `/special poster` - Create campaign posters (1 hour cooldown, 1-3 points)
+- `/special ad` - Run video advertisements (1 hour cooldown, 3-6 points)
+- `/special calendar` - View election timeline and status
+- `/special poll` - Conduct NPC polling with 7% margin of error
+
+**Admin Commands:**
+- `/special admin call_election` - Call special election for vacant House seat
+- `/special admin end_election` - End active special election
+- `/special admin set_winner` - Manually set election winner
+
+### Special Election Campaign Actions
+
+**All actions now have:**
+- **1 hour cooldowns** (unified across all special election actions)
+- **Stamina costs** (varies by action type)
+- **Target system** (specify which candidate benefits)
+- **Short reply windows** (5 minutes for content-based actions)
+
+**1. Special Speech** (`/special speech`)
+- **Requirements**: 700-3000 characters, reply within 5 minutes
+- **Effect**: 2-4 points gained
+- **Stamina Cost**: -20
+- **Cooldown**: 1 hour
+- **Best Used**: Major announcements, policy positions
+
+**2. Special Poster** (`/special poster`)
+- **Requirements**: Image upload (max 10MB)
+- **Effect**: 1-3 points gained
+- **Stamina Cost**: -15
+- **Cooldown**: 1 hour
+- **Best Used**: Visual messaging, name recognition
+
+**3. Special Ad** (`/special ad`)
+- **Requirements**: Video upload (max 25MB), reply within 5 minutes
+- **Effect**: 3-6 points gained
+- **Stamina Cost**: -25
+- **Cooldown**: 1 hour
+- **Best Used**: High-impact moments, final push
+
+### Special Election Strategies
+
+**Time Management**
+- Short 4-day cycle requires aggressive campaigning
+- Plan action timing around 1-hour cooldowns
+- Save high-impact actions for peak activity times
+- No time for traditional campaign building
+
+**Resource Allocation**
+- Limited stamina (100 total) requires careful planning
+- High-point actions (ads) vs. cost-efficient actions (posters)
+- Balance frequency vs. impact
+- No stamina regeneration means every action counts
+
+**Competition Dynamics**
+- Smaller candidate pools create more focused competition
+- Every action directly impacts relative standing
+- Late campaign surges can overcome early deficits
+- Personal relationships matter more in small races
+
+**Strategic Considerations**
+
+**Early Campaign (Hours 1-24)**
+- Focus on name recognition and basic positioning
+- Use posters and speeches to establish presence
+- Build relationships with other candidates
+- Moderate stamina expenditure
+
+**Mid Campaign (Hours 25-48)**
+- Increase activity frequency
+- Begin using higher-impact actions
+- Respond to opponent strategies
+- Ramp up stamina usage
+
+**Late Campaign (Hours 49-96)**
+- Spend all remaining stamina
+- Use highest-impact actions (ads)
+- Focus on swing voters and turnout
+- Final message discipline
+
+**Administrative Special Election Management**
+
+**Calling Special Elections**
+```
+/special admin call_election seat_id:"REP-CA-12" reason:"Incumbent resignation"
+```
+- Only House seats eligible
+- Must provide reason for vacancy
+- Sets 4-day timeline automatically
+
+**Monitoring Special Elections**
+- Use `/special calendar` to track timeline
+- Monitor candidate activity and points
+- Intervene if needed for balance
+- Prepare for results declaration
+
+**Ending Special Elections**
+```
+/special admin end_election seat_id:"REP-CA-12"
+/special admin set_winner candidate:"John Smith" seat_id:"REP-CA-12"
+```
+- Can end early if needed
+- Can manually set winner if required
+- Results automatically update seat holders
+
+---
+
+## 7. Presidential Campaigns
+
+### Presidential Primary System
+
+Presidential campaigns are the most complex and prestigious elections in the bot, featuring unique mechanics and strategic considerations.
+
+**Primary Calendar and Delegate System**
+
+**Early Primary States (High Influence)**
+- Iowa, New Hampshire, South Carolina, Nevada traditionally go first
+- Early victories create momentum and media attention
+- Delegate allocation often winner-take-all or proportional
+- Strong performance here can make or break campaigns
+
+**Super Tuesday (Mass Delegate Day)**
+- Multiple large states vote simultaneously
+- California, Texas, New York often included
+- Requires significant resource allocation
+- Can determine primary winners
+
+**Late Primary States (Cleanup)**
+- Smaller states voting after nominees likely decided
+- Often ignored unless race is very close
+- Good for momentum building and delegate counting
+- Final opportunities for upsets
+
+**Delegate Allocation Rules**
+- Different states use different allocation methods
+- Winner-take-all: Winner gets all delegates
+- Proportional: Delegates split by vote percentage
+- Hybrid: Combination systems
+- Threshold requirements (usually 15% minimum)
+
+### Presidential Action System (Enhanced)
+
+Presidential candidates have access to enhanced campaign actions with greater effects but higher costs:
+
+**1. Presidential Speeches** (`/pres_speech`)
+- **Effect**: 1.5-3.0 points (enhanced from regular speeches)
+- **Stamina Cost**: 3.0
+- **Cooldown**: 1 hour (unified)
+- **Special Features**: Can target multiple states, national media coverage
+- **Best Used**: Major policy announcements, crisis response
+
+**2. Presidential Canvassing** (`/pres_canvassing`)
+- **Effect**: State-targeted with momentum bonus
+- **Stamina Cost**: 4.0
+- **Cooldown**: 1 hour (unified)
+- **Special Features**: Builds momentum and demographic points
+- **Best Used**: Swing states, ground game building
+
+**3. Presidential Ads** (`/pres_ad`)
+- **Effect**: 2.0-4.0 points (very high)
+- **Stamina Cost**: 5.0
+- **Cooldown**: 1 hour (unified)
+- **Special Features**: Multi-state reach, premium effectiveness
+- **Best Used**: Final weeks, major media markets
+
+**4. Presidential Posters** (`/pres_poster`)
+- **Effect**: 1.0-2.0 points (enhanced)
+- **Stamina Cost**: 2.0
+- **Cooldown**: 1 hour (unified)
+- **Special Features**: National distribution, brand building
+- **Best Used**: Continuous presence, name recognition
+
+**5. Presidential Donor Appeals** (`/pres_donor`)
+- **Effect**: Major fundraising, future campaign benefits
+- **Stamina Cost**: 3.5
+- **Cooldown**: 1 hour (unified)
+- **Special Features**: National fundraising reach, +5 corruption
+- **Best Used**: Building war chest, crisis response
+
+### Vice Presidential Selection
+
+**VP Selection Strategy**
+
+**Geographic Balance**
+- Choose VP from different region than presidential candidate
+- Examples: Eastern president + Western VP, Southern president + Northern VP
+- Helps with electoral map strategy
+- Provides local knowledge and connections
+
+**Demographic Balance**
+- Balance age, gender, race, religion, background
+- Appeal to different voter coalitions
+- Example: Young candidate + experienced VP
+- Cover presidential candidate's weaknesses
+
+**Ideological Balance**
+- Moderate candidate + progressive VP or vice versa
+- Helps with party unity after divisive primaries
+- Appeases different party factions
+- Balances policy positions
+
+**Electoral Strategy Balance**
+- Swing state VPs help with crucial battlegrounds
+- Safe state VPs help with base mobilization
+- Experience in different types of campaigns
+- Fundraising capabilities and donor networks
+
+**VP Campaign Mechanics**
+
+**Joint Campaign Benefits**
+- VP candidates can campaign for the presidential candidate
+- Shared stamina and resource pools in some cases
+- Coordinated campaign strategies
+- Joint appearances and events
+
+**Independent Campaign Capabilities**
+- VPs can run separate but coordinated campaigns
+- Target different demographics or regions
+- Provides campaign redundancy
+- Allows broader geographic coverage
+
+### General Election Strategy
+
+**Electoral College Simulation**
+
+The bot simulates electoral college dynamics:
+
+**Safe States Strategy**
+- Identify your safe states early
+- Maintain minimal presence to prevent upsets
+- Focus resources on competitive states
+- Use safe states for fundraising and volunteer recruitment
+
+**Swing State Focus**
+- Identify true swing states (within 5-10% polling)
+- Allocate majority of campaign resources
+- Build momentum systematically
+- Target key demographics in each swing state
+
+**Expansion Strategy**
+- After securing swing states, target opponent safe states
+- Force opponent to defend traditionally safe territory
+- Creates multiple paths to victory
+- Requires significant resource advantage
+
+**Defensive Strategy**
+- When behind, focus on preventing opponent momentum
+- Trigger momentum collapses in key states
+- Counter-program against opponent's demographic strategy
+- Force opponent to defend everywhere
+
+### Presidential Campaign Timeline
+
+**Early Primary Phase (Months 1-3)**
+- Build name recognition and basic organization
+- Focus on early primary states
+- Develop policy positions and messaging
+- Begin demographic coalition building
+
+**Primary Campaign Phase (Months 4-8)**
+- Intensive campaigning in primary states
+- Debate preparation and performance
+- Opposition research and rapid response
+- Delegate accumulation and math
+
+**VP Selection Phase (Month 9)**
+- Vet potential running mates
+- Negotiate VP selection terms
+- Plan convention and announcement strategy
+- Begin general election preparation
+
+**General Election Phase (Months 10-12)**
+- Pivot to general election messaging
+- Focus on swing states and electoral college
+- Debate preparation for general election debates
+- Get-out-the-vote operations
+
+### Crisis Management in Presidential Campaigns
+
+**Scandal Response**
+- Rapid response capabilities essential
+- Crisis communication strategies
+- Damage control and narrative management
+- Using VP or surrogates for defense
+
+**Opposition Research Defense**
+- Prepare for inevitable attacks
+- Pre-emptive disclosure strategies
+- Turning opponent attacks against them
+- Using momentum system defensively
+
+**Momentum Collapse Recovery**
+- Have multiple state strategies ready
+- Rapid resource reallocation capabilities
+- Crisis fundraising operations
+- Media narrative recovery plans
+
+---
+
+## 8. Party Management
+
+### Understanding the Party System
+
+Political parties in the bot serve as organizational structures that affect campaign effectiveness, coalition building, and long-term strategy. The party system includes both default parties and custom party creation capabilities.
+
+**Default Party Configuration**
+
+**Democratic Party (Blue)**
+- Color: #0099FF (Blue)
+- Abbreviation: D
+- Traditional Strongholds: Urban areas, coasts, educated suburbs
+- Typical Demographics: Urban voters, college-educated, young voters, minorities
+- Advantages: Strong in high-population states
+
+**Republican Party (Red)**
+- Color: #FF0000 (Red)
+- Abbreviation: R
+- Traditional Strongholds: Rural areas, suburbs, Southern states
+- Typical Demographics: Rural voters, gun rights advocates, evangelicals
+- Advantages: Geographic distribution, consistent base turnout
+
+**Independent (Purple)**
+- Color: #800080 (Purple)
+- Abbreviation: I
+- Traditional Strongholds: Varies widely
+- Typical Demographics: Suburban voters, moderate professionals
+- Advantages: Flexibility, can build unique coalitions
+
+**Additional Default Parties** (Server-dependent)
+- Green Party (Green) - Environmental voters, young progressives
+- Libertarian Party (Yellow) - Limited government, social liberals
+
+### Custom Party Creation
+
+**Creating New Parties**
+
+Administrators can create custom parties for unique roleplay scenarios:
+
+```
+/party admin create name:"Progressive Party" abbreviation:"P" color:"00FF80"
+```
+
+**Party Design Considerations**
+
+**Naming Strategy**
+- Choose names that reflect ideology or region
+- Examples: "Conservative Coalition", "Labor Party", "Midwest Alliance"
+- Avoid names that might confuse with existing parties
+- Consider historical precedents for realism
+
+**Visual Identity**
+- Choose colors that aren't taken by existing parties
+- Consider color psychology (red = conservative, blue = liberal, green = environmental)
+- Ensure colors are distinguishable in Discord displays
+- Hex codes must be valid (000000 to FFFFFF)
+
+**Abbreviation System**
+- Keep abbreviations short and memorable (1-3 characters)
+- Should clearly relate to party name
+- Avoid confusion with existing abbreviations
+- Consider how they'll appear in candidate listings
+
+### Party Strategy and Coalition Building
+
+**Intra-Party Dynamics**
+
+**Primary Elections**
+- Multiple candidates from same party compete
+- Can create lasting divisions or strengthen eventual nominee
+- Ideological debates within party framework
+- Resource allocation among party candidates
+
+**Party Unity**
+- Coordinate campaigns to avoid conflicting messages
+- Share resources and intelligence
+- Support other party members in non-competitive races
+- Present unified front against opposition
+
+**Faction Management**
+- Most parties have internal ideological factions
+- Balance moderate and extreme positions
+- Manage activist base vs. general election needs
+- Handle endorsements and party leadership
+
+**Inter-Party Strategy**
+
+**Opposition Research**
+- Track opponent party activities and strategies
+- Identify weaknesses in opponent coalitions
+- Time attacks for maximum effectiveness
+- Coordinate multi-candidate responses
+
+**Coalition Disruption**
+- Target opponent's demographic coalitions
+- Use momentum system to destabilize opponent strongholds
+- Force opponents to defend safe territory
+- Create third-party spoiler effects
+
+**Alliance Building**
+- Temporary alliances with minor parties
+- Coalition governments in multi-party scenarios
+- Strategic endorsements across party lines
+- Issue-specific cooperation
+
+### Party Management Commands
+
+**Information Commands**
+
+**View All Parties** (`/party info list`)
+- Shows all available parties with colors and abbreviations
+- Displays party type (default vs. custom)
+- Essential for candidate registration decisions
+
+**Administrative Commands**
+
+**Party Creation** (`/party admin create`)
+- Creates new political parties
+- Requires admin permissions
+- Sets name, abbreviation, and color
+
+**Party Editing** (`/party admin edit`)
+- Modifies existing party attributes
+- Can change name, abbreviation, or color
+- Cannot edit default parties in some configurations
+
+**Party Removal** (`/party admin remove`)
+- Removes custom parties
+- Cannot remove default parties
+- May affect existing candidate registrations
+
+**Bulk Operations**
+
+**Bulk Party Creation** (`/party admin bulk_create`)
+- Create multiple parties at once
+- Format: "Name:Abbr:Color,Name:Abbr:Color"
+- Efficient for complex political scenarios
+
+**Party Reset** (`/party admin reset`)
+- Removes all custom parties
+- Resets to default configuration
+- Destructive operation requiring confirmation
+
+**Export Functions** (`/party admin export`)
+- Export party configuration for backup
+- Multiple formats (CSV, bulk creation format)
+- Useful for transferring setups between servers
+
+### Advanced Party Strategies
+
+**Multi-Party Scenarios**
+
+**Coalition Government Simulation**
+- Create multiple parties representing different ideologies
+- No single party has majority
+- Requires post-election coalition building
+- More realistic parliamentary-style democracy
+
+**Regional Party Systems**
+- Create parties representing specific geographic regions
+- Example: "Western Alliance", "Southern Coalition"
+- Reflects real regional political differences
+- Creates interesting strategic dynamics
+
+**Issue-Based Parties**
+- Single-issue parties for specific causes
+- Examples: "Environmental Party", "Labor Rights Party"
+- Can serve as kingmakers in close elections
+- Forces major parties to address specific issues
+
+**Historical Simulation**
+- Create parties based on historical periods
+- Examples: Whigs, Federalists, Bull Moose Party
+- Educational value for history-focused servers
+- Unique campaign dynamics and strategies
+
+**Party Brand Management**
+
+**Consistency Across Candidates**
+- Ensure all party candidates use similar messaging
+- Coordinate policy positions and priorities
+- Manage party image and reputation
+- Handle candidate scandals and controversies
+
+**Long-Term Party Building**
+- Build party infrastructure across multiple election cycles
+- Develop party leadership and succession planning
+- Create party fundraising and resource sharing
+- Establish party traditions and culture
+
+**Adaptation and Evolution**
+- Parties must adapt to changing demographics
+- Respond to new issues and challenges
+- Balance tradition with innovation
+- Handle generational changes in party membership
+
+---
+
+## 9. Advanced Strategies
+
+### Coalition Building Mastery (Updated for No-Threshold System)
+
+**Multi-Demographic Coalition Architecture**
+
+With the removal of thresholds, coalition building becomes more fluid and strategic:
+
+**The Continuous Investment Rule**
+- Every point matters, no arbitrary stopping points
+- Focus on multiplier efficiency over raw point accumulation
+- 100 points in a 0.25x state = 25 effective points
+- 500 points in a 0.05x state = 25 effective points
+
+**Geographic Specialization Strategy**
+
+Build overwhelming strength in favorable areas:
+
+**Example Progressive Coalition**
+- **Core States**: California, New York, Massachusetts (Urban + College-Educated strong)
+- **Secondary States**: Colorado, Washington, Oregon (Environmental + Tech strong)
+- **Avoid**: Alabama, Wyoming, Mississippi (all demographics weak)
+
+**Resource Allocation**: 80% in strong states, 20% in secondary states
+
+**Conflict Avoidance Matrix**
+
+Create a matrix showing safe demographic combinations:
+
+```
+Safe Combinations:
+Urban + College-Educated + Environmental = Low conflict
+Rural + Gun Rights + Evangelical = Low conflict
+Blue-Collar + Low-Income + Union = Low conflict
+
+High Conflict Combinations:
+Urban + Rural = High backlash
+Young + Senior = High backlash
+Environmental + Gun Rights = Extreme backlash
+```
+
+### Advanced Campaign Timing (1-Hour Cooldown Optimization)
+
+**Peak Efficiency Scheduling**
+
+With universal 1-hour cooldowns, timing becomes critical:
+
+**Server Activity Patterns**
+- **Peak Hours**: 6-10 PM local time
+- **Secondary Peak**: 12-2 PM local time
+- **Low Activity**: 2-6 AM local time
+
+**Action Scheduling Strategy**
+1. **Prime Time Actions**: Speeches and Ads during peak hours
+2. **Maintenance Actions**: Posters during low activity
+3. **Response Actions**: Keep one slot available for crisis response
+
+**Multi-Candidate Coordination**
+
+For party members or allied candidates:
+
+**Staggered Action Plan**
+- Candidate A: Actions at :00 minutes
+- Candidate B: Actions at :20 minutes
+- Candidate C: Actions at :40 minutes
+- Creates continuous party presence
+
+**Complementary Targeting**
+- Different candidates target different demographics
+- Avoid overlap in state targeting
+- Coordinate messaging themes
+
+### Opposition Research and Intelligence
+
+**Intelligence Gathering Systems**
+
+**Tracking Opponent Activity**
+- Monitor opponent action timing patterns
+- Track their demographic targeting preferences
+- Identify their strongest and weakest states
+- Watch for momentum vulnerability windows
+
+**Pattern Analysis**
+- Note opponent's preferred action types
+- Identify their peak activity times
+- Track their demographic progress
+- Monitor their stamina usage patterns
+
+**Counter-Intelligence Operations**
+
+**Momentum Warfare**
+- Time momentum collapses for maximum impact
+- Coordinate multiple party members for collapse attempts
+- Force opponents into defensive positions
+- Create momentum vulnerability through pressure
+
+**Demographic Disruption**
+- Target demographics that conflict with opponent's coalition
+- Use geographic strategies to trigger backlash
+- Force opponents to defend their demographic base
+- Counter-program during opponent's high-activity periods
+
+**Crisis Exploitation**
+- Rapid response to opponent scandals or mistakes
+- Amplify opponent weaknesses through coordinated actions
+- Use corruption scandals to question opponent integrity
+- Coordinate crisis response across party members
+
+### Late-Campaign Surge Strategies
+
+**Resource Conservation vs. All-Out Push**
+
+**Conservation Strategy** (When Ahead)
+- Maintain minimal presence to prevent opponent momentum
+- Focus on preventing momentum collapses
+- Keep resources for crisis response
+- Avoid risky actions that might trigger scandals
+
+**Surge Strategy** (When Behind)
+- Spend all remaining resources in final push
+- Take calculated risks with high-corruption actions
+- Focus on momentum building in key states
+- Coordinate maximum party effort
+
+**Closing Arguments**
+
+**Message Discipline**
+- Synthesize campaign themes into final message
+- Target undecided voters with moderate positions
+- Reinforce base support to ensure turnout
+- Avoid new controversies or position changes
+
+**Turnout Operations**
+- Focus on states where you have momentum
+- Target your strongest demographic groups
+- Use remaining stamina for maximum effectiveness
+- Coordinate get-out-the-vote efforts
+
+### Multi-State Strategic Frameworks
+
+**Regional Dominance Strategy**
+
+**Rust Belt Strategy**: Blue-collar + union focus (PA, OH, MI, WI)
+- Demographics: Blue-Collar Workers, Low-Income Voters
+- Messaging: Economic populism, job protection
+- States: Pennsylvania, Ohio, Michigan, Wisconsin
+- Avoid: Tech-heavy or high-education areas
+
+**Sun Belt Strategy**: Suburban growth, education focus (AZ, GA, NC, TX)
+- Demographics: Suburban Voters, College-Educated Professionals
+- Messaging: Economic opportunity, good governance
+- States: Arizona, Georgia, North Carolina, Texas
+- Avoid: Rural areas within these states
+
+**Mountain West Strategy**: Environmental + individual freedom (CO, NV, UT, MT)
+- Demographics: Environmental Voters, Young Voters, Tech Workers
+- Messaging: Environmental protection, personal liberty
+- States: Colorado, Nevada, Utah, Montana
+- Avoid: Heavy industry or traditional energy areas
+
+**Micro-Targeting Within States**
+
+**Urban Cores**: Demographics - Urban voters, minorities, young professionals
+- Actions: Speeches about urban issues, targeted demographic appeals
+- Timing: Peak hours when urban users most active
+- Avoid: Rural-focused messaging or demographic conflicts
+
+**Suburban Rings**: Demographics - Suburban voters, college-educated, families
+- Actions: Moderate messaging, education focus, safety themes
+- Timing: Evening hours when suburban families online
+- Avoid: Extreme positions that might alienate moderates
+
+**Rural Areas**: Demographics - Rural voters, gun rights advocates, religious voters
+- Actions: Traditional values messaging, economic populism
+- Timing: Earlier evening hours, weekend mornings
+- Avoid: Urban-focused policies or environmental extremism
+
+### Crisis Management and Rapid Response
+
+**Scandal Response Protocols**
+
+**Immediate Response** (First Hour)
+- Assess severity and potential impact
+- Prepare initial response statement
+- Coordinate with party leadership
+- Begin damage control messaging
+
+**Short-Term Response** (First 24 Hours)
+- Launch counter-narrative campaign
+- Use opposition research to deflect
+- Mobilize party surrogates for defense
+- Begin rebuilding damaged momentum
+
+**Long-Term Recovery** (Weeks)
+- Pivot to positive messaging themes
+- Rebuild demographic coalitions affected
+- Restore momentum in key states
+- Plan comeback strategy
+
+**Opponent Crisis Exploitation**
+
+**Rapid Strike Capability**
+- Keep action available for opponent scandals
+- Coordinate immediate response with party members
+- Amplify opponent weaknesses through sustained pressure
+- Use crisis to trigger momentum collapses
+
+**Sustained Pressure Campaigns**
+- Maintain pressure over multiple news cycles
+- Coordinate messaging across multiple candidates
+- Use various action types to maintain pressure
+- Force opponent into defensive positions
+
+### Special Election Integration
+
+**Using Special Elections Strategically**
+
+**Testing Ground for New Strategies**
+- Use special elections to test demographic appeals
+- Experiment with new messaging themes
+- Build name recognition for future candidates
+- Practice rapid campaign tactics
+
+**Momentum Building**
+- Use special election victories to build party momentum
+- Create media narratives of party strength
+- Demonstrate campaign capabilities
+- Build fundraising and volunteer networks
+
+**Opposition Research**
+- Study opponent tactics in special elections
+- Identify opponent strengths and weaknesses
+- Test opposition research in lower-stakes races
+- Develop counter-strategies for general elections
+
+**Coordination with General Elections**
+- Time special elections to support general election narratives
+- Use special election candidates as surrogates
+- Coordinate messaging between special and general candidates
+- Build party infrastructure for general elections
+
+---
+
+## 10. Admin Tools
+
+### Essential Election Administration
+
+**Election System Architecture**
+
+Before campaigns begin, configure fundamental election infrastructure:
+
+**Seat Configuration** (`/election admin set_seats`)
+
+Consider these factors:
+- **Realistic Representation**: Base seats on actual population/server member counts
+- **Election Timing Balance**: Senate (6-year), House (2-year), Governor (4-year), President/VP (4-year)
+- **Special Election Readiness**: Ensure House seats are properly configured for special elections
+
+**Example Seat Configuration:**
+```
+Large States (CA, TX, NY): 6 Senate seats, 8-12 House districts, 1 Governor
+Medium States (PA, OH, MI): 3 Senate seats, 4-6 House districts, 1 Governor  
+Small States (WY, VT, DE): 3 Senate seats, 1-2 House districts, 1 Governor
+```
+
+**Time Scale Management**
+
+**Realistic Pacing Guidelines:**
+- Signup Phase: 3-7 real days
+- Primary Campaign: 7-14 real days
+- Primary Election: 1-3 real days
+- General Campaign: 14-21 real days
+- General Election: 1-3 real days
+- Special Elections: 4 real days (fixed)
+
+**Time Scale Formulas:**
+```
+Active Server: 30-60 minutes per RP day
+Moderate Server: 60-120 minutes per RP day
+Casual Server: 120-240 minutes per RP day
+```
+
+**Advanced Election Management**
+
+**Multi-Cycle Planning**
+- **Presidential Election Years** (Every 4 years): All House, 1/3 Senate, Governors, President/VP
+- **Midterm Election Years** (2 years after): All House, 1/3 Senate (different class), some Governors
+- **Off-Year Elections**: Special elections only, good for party building
+
+**Voting System Management**
+
+**Hybrid Approach** (Recommended):
+- Use automated calculations for most races
+- Manual intervention for close races (within 5%)
+- Administrative judgment for special circumstances
+
+**Vote Calculation Factors:**
+- Campaign points accumulated
+- Momentum levels in relevant states
+- Demographic coalition strength (no longer threshold-based)
+- State political leans and multipliers
+- Random variance for realism
+
+### System Balance and Monitoring
+
+**Campaign Activity Tracking**
+
+**Regular Monitoring Tasks**
+- Track campaign actions per candidate weekly
+- Monitor stamina usage patterns across all candidates
+- Identify inactive candidates for intervention
+- Watch for system exploitation or gaming
+
+**Balance Indicators**
+- Campaign action frequency by candidate
+- Stamina efficiency across different strategies
+- Demographic targeting effectiveness by state
+- Momentum accumulation and collapse patterns
+
+**Fairness and Balance Maintenance**
+
+**Demographic System Balance**
+- Monitor which demographic combinations are most effective
+- Ensure no single demographic becomes overpowered
+- Watch for unintended consequences of the no-threshold system
+- Adjust state multipliers if needed for balance
+
+**Momentum System Oversight**
+- Track momentum accumulation rates across parties
+- Monitor momentum collapse frequency and effectiveness
+- Ensure momentum system isn't too punishing or too forgiving
+- Adjust vulnerability thresholds if needed
+
+**State Balance Verification**
+- Ensure no states are consistently ignored by all candidates
+- Monitor whether state multipliers are encouraging geographic diversity
+- Watch for unintended consequences of lean adjustments
+- Verify special elections are evenly distributed
+
+### Special Election Administration
+
+**Calling Special Elections**
+
+**Strategic Timing**
+- Avoid calling during major regular election phases
+- Consider server activity levels when scheduling
+- Ensure adequate admin coverage for the 4-day period
+- Plan around major server events or activities
+
+**Seat Selection Criteria**
+- Only House seats are eligible for special elections
+- Consider competitive districts for maximum engagement
+- Rotate through different states to maintain interest
+- Avoid recently contested districts unless necessary
+
+**Management During Special Elections**
+
+**Daily Monitoring** (4-day cycle)
+- Day 1: Ensure signup phase runs smoothly
+- Days 2-4: Monitor campaign activity and balance
+- Intervene only if necessary for fairness
+- Prepare for results and transition
+
+**Balance Interventions**
+- Watch for domination by single candidates
+- Ensure all candidates have opportunity to participate
+- Monitor for exploitation of special election mechanics
+- Maintain competitive balance without heavy-handedness
+
+### Crisis Management and Intervention
+
+**System Failures and Bugs**
+
+**Common Issues**
+- Cooldown systems not working properly
+- Stamina deduction errors
+- Demographic multiplier calculation problems
+- Momentum system inconsistencies
+
+**Emergency Procedures**
+- Document the issue immediately
+- Use admin override commands to fix immediate problems
+- Communicate with affected users transparently
+- Plan longer-term fixes for recurring issues
+
+**User Disputes and Appeals**
+
+**Dispute Resolution Process**
+1. **Initial Review**: Examine logs and system records
+2. **User Communication**: Gather perspectives from all parties
+3. **Fact Finding**: Determine what actually happened
+4. **Resolution**: Apply fair solution based on evidence
+5. **Documentation**: Record decision for future reference
+
+**Common Dispute Types**
+- Cooldown disputes (timing disagreements)
+- Stamina calculation errors
+- Action effectiveness questions
+- Demographic targeting results
+
+**Fair Play Enforcement**
+
+**Gaming Prevention**
+- Monitor for exploitation of system mechanics
+- Watch for coordination that violates fair play
+- Ensure special elections aren't being manipulated
+- Maintain competitive balance across all candidates
+
+**Punishment Guidelines**
+- Warning for minor violations
+- Temporary action restrictions for moderate violations
+- Campaign suspension for serious violations
+- Permanent ban for repeated major violations
+
+### Advanced Administrative Features
+
+**Custom Event Creation**
+
+**Special Scenarios**
+- Crisis events that affect all campaigns
+- Economic events that change state dynamics
+- Scandal events that test crisis management
+- Media events that boost or harm specific candidates
+
+**Event Management**
+- Time events for maximum impact and engagement
+- Ensure events don't unfairly advantage specific candidates
+- Provide equal opportunities for response
+- Monitor event effects on campaign balance
+
+**Data Analysis and Reporting**
+
+**Regular Reports**
+- Weekly campaign activity summaries
+- Monthly demographic targeting analysis
+- Quarterly momentum system review
+- Annual election cycle post-mortem
+
+**Key Metrics to Track**
+- Average actions per candidate per day
+- Stamina efficiency by action type
+- Demographic success rates by state
+- Momentum collapse frequency and recovery times
+- Special election participation and engagement rates
+
+### System Optimization
+
+**Performance Monitoring**
+
+**Database Performance**
+- Monitor query response times
+- Track database growth and storage usage
+- Optimize slow queries affecting user experience
+- Plan for scaling as server grows
+
+**User Experience Optimization**
+- Track command response times
+- Monitor user engagement with different features
+- Identify confusing or underused features
+- Plan UI/UX improvements based on usage data
+
+**Feature Development Priorities**
+
+**High Priority Updates**
+- Bug fixes affecting gameplay
+- Balance adjustments based on observed patterns
+- Quality of life improvements for frequent actions
+- New features that increase engagement
+
+**Future Development Ideas**
+- Advanced demographic interactions
+- More sophisticated momentum mechanics
+- Enhanced special election features
+- Cross-server election competitions
+
+---
+
+## 11. Troubleshooting
+
+### Common User Issues
+
+**Action Cooldown Problems**
+
+**"Command not available" errors**
+- Check exact cooldown remaining with status commands
+- Universal 1-hour cooldowns apply to all campaign actions
+- Special election actions have separate cooldown timers
+- Presidential actions may have different cooldown periods
+
+**Solution Steps:**
+1. Use `/time current_time` to check current phase
+2. Verify you're in correct election phase for the action
+3. Check your candidate registration status
+4. Wait for full cooldown period before retrying
+
+**Stamina Depletion Issues**
+
+**"Not enough stamina" errors**
+- Stamina regenerates daily (50 for general, 100 for presidential)
+- Actions cost different amounts of stamina
+- Special elections start with 100 stamina, no regeneration
+
+**Management Tips:**
+- Plan stamina usage across multiple days
+- Save emergency stamina for crisis response
+- Use lower-cost actions (posters) for maintenance campaigning
+- Coordinate with allies to share stamina burden
+
+**Target System Confusion**
+
+**"Target candidate not found" errors**
+- All actions now require specifying target candidate
+- Target must be registered candidate in current election
+- Use autocomplete to see available candidates
+- Special elections have separate candidate pools
+
+**Best Practices:**
+- Use `/view_signups` to see available candidates
+- Use autocomplete features for target selection
+- Verify candidate names match exactly
+- Check if targeting yourself vs. other candidates
+
+### Demographic System Issues
+
+**No-Threshold System Confusion**
+
+**"How do I know if I'm winning?" questions**
+- No more thresholds means every point counts
+- Focus on efficiency through state multipliers
+- Monitor relative progress against opponents
+- Use `/demographic_status` for progress tracking
+
+**Strategic Guidance:**
+- 100 points in 0.25x state = 25 effective points
+- 400 points in 0.05x state = 20 effective points
+- Choose states where your demographics are strongest
+- Avoid states where you have weak multipliers
+
+**Conflict System Problems**
+
+**Unexpected backlash effects**
+- Targeting opposing demographics creates backlash
+- Geographic separation can reduce conflicts
+- Some demographics have multiple conflict relationships
+- Backlash scales with investment level
+
+**Conflict Avoidance:**
+- Study demographic conflict chart carefully
+- Use different states for conflicting demographics
+- Monitor backlash indicators during campaigns
+- Plan coalition strategies to minimize conflicts
+
+### Special Election Troubleshooting
+
+**Signup Phase Issues**
+
+**"No active special elections" errors**
+- Special elections must be called by admins
+- Only House seats are eligible for special elections
+- Signup phase lasts only 24 hours
+- Check `/special calendar` for current status
+
+**Campaign Phase Problems**
+
+**Shorter timeline confusion**
+- Special elections last only 4 days total
+- All cooldowns are 1 hour in special elections
+- No stamina regeneration during campaign
+- Actions cost more stamina than regular elections
+
+**Results and Winner Issues**
+
+**"Results not showing" problems**
+- Results calculated based on points accumulated
+- Admin may need to manually declare winner
+- Points visible through polling commands during campaign
+- Final results announced automatically at campaign end
+
+### Momentum System Troubleshooting
+
+**Momentum Vulnerability Confusion**
+
+**"Why am I vulnerable?" questions**
+- Vulnerability occurs at 50+ momentum points
+- Vulnerable parties show ⚠️ warning indicator
+- Opponents can trigger momentum collapse
+- 6-hour cooldown between collapse attempts
+
+**Defensive Strategies:**
+- Monitor momentum levels in all states
+- Diversify momentum across multiple states
+- Keep party members ready for defense
+- Plan backup strategies for post-collapse recovery
+
+**Collapse Recovery Issues**
+
+**"How to recover from collapse?" questions**
+- Collapses reduce momentum by 30-70%
+- Focus rebuilding in your strongest states
+- Use crisis as opportunity to pivot strategy
+- Coordinate party-wide recovery efforts
+
+### Presidential Campaign Troubleshooting
+
+**VP Selection Problems**
+
+**"Can't find VP candidates" issues**
+- VP candidates must register separately
+- Presidential candidate must accept VP choice
+- Both must be from same party typically
+- Check `/view_pres_signups` for available VPs
+
+**Enhanced Action Confusion**
+
+**Presidential action cost concerns**
+- Presidential actions cost more stamina
+- Effects are enhanced compared to regular actions
+- 200 stamina pool vs. 100 for regular candidates
+- Daily regeneration is 100 vs. 50 for regular
+
+### Admin Troubleshooting
+
+**Election Setup Issues**
+
+**Seat configuration problems**
+- Use `/election admin set_seats` for initial setup
+- Ensure House seats are marked correctly for special elections
+- Verify state names match demographic system
+- Test configuration before major elections
+
+**Time Scale Problems**
+
+**"Time moving too fast/slow" issues**
+- Use `/time set_time_scale` to adjust pacing
+- Consider server activity levels when setting scale
+- Monitor user feedback on campaign length
+- Adjust based on participation patterns
+
+**Special Election Management**
+
+**Calling special elections incorrectly**
+- Only House seats eligible for special elections
+- Use proper seat ID format
+- Provide clear reason for calling election
+- Ensure adequate admin coverage for 4-day period
+
+### System Performance Issues
+
+**Database Performance**
+
+**Slow command responses**
+- Monitor database query performance
+- Optimize frequently used commands
+- Consider database maintenance during low activity
+- Plan for scaling as server grows
+
+**Discord API Limits**
+
+**Rate limiting errors**
+- Bot may hit Discord API rate limits during peak usage
+- Implement queuing for non-critical operations
+- Prioritize user-facing commands over background tasks
+- Monitor API usage patterns
+
+### Emergency Procedures
+
+**System Failure Recovery**
+
+**Database corruption or loss**
+- Maintain regular database backups
+- Document recovery procedures
+- Test backup restoration process
+- Communicate with users during outages
+
+**Critical Bug Discovery**
+
+**Game-breaking bugs during active campaigns**
+- Document bug behavior immediately
+- Implement temporary workarounds if possible
+- Communicate transparently with affected users
+- Plan compensation for significantly affected campaigns
+
+**User Disputes**
+
+**Escalation procedures**
+- Gather all relevant logs and evidence
+- Provide fair hearing for all parties
+- Make decisions based on documented evidence
+- Maintain consistency with previous rulings
+
+### Prevention and Best Practices
+
+**Regular Maintenance**
+
+**Weekly Tasks**
+- Review system logs for errors
+- Monitor campaign balance and participation
+- Check database performance metrics
+- Update documentation as needed
+
+**Monthly Tasks**
+- Analyze user engagement patterns
+- Review and update system balance
+- Plan upcoming special elections
+- Conduct system performance review
+
+**Quarterly Tasks**
+- Comprehensive system review
+- User feedback collection and analysis
+- Major feature planning and development
+- Documentation updates and improvements
+
+This comprehensive handbook should now cover all the major updates and changes to the election bot system, including special elections, the new no-threshold demographic system, universal 1-hour cooldowns, and updated strategies that reflect these changes.
+
+
