@@ -47,13 +47,10 @@ async def on_ready():
                     else:
                         print(f"SYNC_LOG: ❌ {target} NOT found in command tree")
                 
-                # Clear and sync to dev guild
-                bot.tree.clear_commands(guild=dev_guild)
-                await bot.tree.sync(guild=dev_guild)  # Clear Discord's cache
-                await asyncio.sleep(1)  # Wait for Discord to process
+                # Sync to dev guild
                 bot.tree.copy_global_to(guild=dev_guild)
                 synced = await bot.tree.sync(guild=dev_guild)
-                print(f"Commands cleared and synced to dev guild: {len(synced)} commands")
+                print(f"Commands synced to dev guild: {len(synced)} commands")
                 
                 # Log commands after syncing
                 synced_commands = bot.tree.get_commands()
@@ -287,6 +284,18 @@ async def main():
                             bot.tree.add_command(cmd)
                         else:
                             print(f"SYNC_LOG: {cmd.name} already in command tree")
+            
+            # Final check of command tree before pres_campaign_actions loads
+            pre_pres_commands = bot.tree.get_commands()
+            pre_pres_names = [cmd.name for cmd in pre_pres_commands]
+            print(f"SYNC_LOG: Commands in tree before pres_campaign_actions: {pre_pres_names}")
+            
+            target_commands = ['view_general_campaign', 'admin_view_all_campaign_points']
+            for target in target_commands:
+                if target in pre_pres_names:
+                    print(f"SYNC_LOG: ✅ {target} confirmed before pres_campaign_actions")
+                else:
+                    print(f"SYNC_LOG: ❌ {target} missing before pres_campaign_actions")
             await bot.load_extension("cogs.party_management")
             print("✓ Loaded party_management")
             await bot.load_extension("cogs.presidential_signups")
@@ -366,33 +375,8 @@ async def main():
                 else:
                     print(f"SYNC_LOG: ❌ {target} missing from global tree")
             
-            # Force sync commands after all cogs are loaded
-            print("SYNC_LOG: Force syncing commands after all cogs loaded...")
-            try:
-                if TESTING:
-                    # Clear and rebuild guild commands
-                    bot.tree.clear_commands(guild=dev_guild)
-                    bot.tree.copy_global_to(guild=dev_guild)
-                    synced_final = await bot.tree.sync(guild=dev_guild)
-                    print(f"SYNC_LOG: Final sync to dev guild: {len(synced_final)} commands")
-                    
-                    # Verify the sync worked
-                    guild_commands_final = await bot.tree.fetch_commands(guild=dev_guild)
-                    guild_names_final = [cmd.name for cmd in guild_commands_final]
-                    print(f"SYNC_LOG: Final guild commands: {guild_names_final}")
-                    
-                    for target in target_commands:
-                        if target in guild_names_final:
-                            print(f"SYNC_LOG: ✅ {target} successfully synced to guild")
-                        else:
-                            print(f"SYNC_LOG: ❌ {target} failed to sync to guild")
-                else:
-                    # Global sync
-                    synced_final = await bot.tree.sync()
-                    print(f"SYNC_LOG: Final global sync: {len(synced_final)} commands")
-                    
-            except Exception as sync_error:
-                print(f"SYNC_LOG: Final sync error: {sync_error}")
+            # Commands will be synced in on_ready event after bot connects
+            print("SYNC_LOG: All cogs loaded - commands will sync when bot connects")
             
         except Exception as e:
             print(f"Error loading cogs: {e}")
