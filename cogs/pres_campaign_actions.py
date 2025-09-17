@@ -7,11 +7,6 @@ import asyncio
 from typing import Optional, List
 from .presidential_winners import PRESIDENTIAL_STATE_DATA
 
-# Define command groups at module level
-pres_campaign_group = app_commands.Group(name="pres_campaign", description="Presidential campaign actions")
-pres_admin_group = app_commands.Group(name="pres_admin", description="Presidential admin commands")
-pres_poll_group = app_commands.Group(name="pres_poll", description="Presidential polling commands")
-
 class PresCampaignActions(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -251,21 +246,8 @@ class PresCampaignActions(commands.Cog):
                                            stamina_cost: int = 0, corruption_increase: int = 0, candidate_data: Optional[dict] = None,
                                            action_user_id: Optional[int] = None):
         """Update presidential candidate's polling, stamina, and corruption"""
-        # Safe-state halving for President: if base party support in this state is >=55%, halve polling_boost
-        try:
-            from .presidential_winners import PRESIDENTIAL_STATE_DATA
-            state_key = state_name.upper()
-            if candidate_data and state_key in PRESIDENTIAL_STATE_DATA:
-                party_lower = candidate_data.get("party", "").lower()
-                party_key = "republican" if ("republican" in party_lower or "gop" in party_lower) else ("democrat" if "democrat" in party_lower else "other")
-                base_pct = PRESIDENTIAL_STATE_DATA[state_key].get(party_key, 0)
-                if base_pct >= 55:
-                    polling_boost = polling_boost * 0.5
-        except Exception:
-            pass
-
         time_col, time_config = self._get_time_config(guild_id)
-        current_phase = time_config.get("current_phase", "") if time_config else ""
+        current_phase = time_config.get("current_phase", "")
 
         # Apply momentum multiplier during General Campaign
         actual_polling_boost = polling_boost
@@ -572,11 +554,6 @@ class PresCampaignActions(commands.Cog):
 
             # Get momentum config
             momentum_col, momentum_config = momentum_cog._get_momentum_config(guild_id)
-            # Guard against missing/malformed momentum config
-            if momentum_config is None or not isinstance(momentum_config, dict):
-                momentum_config = {"state_momentum": {}}
-            if "state_momentum" not in momentum_config or not isinstance(momentum_config.get("state_momentum"), dict):
-                momentum_config["state_momentum"] = {}
 
             # Get candidate data - either from parameter or lookup
             candidate = candidate_data
@@ -648,7 +625,7 @@ class PresCampaignActions(commands.Cog):
                         "user_id": user_id,
                         "party": fallback_party,
                         "office": "President",  # Assume presidential for momentum
-                        "year": (time_config.get("current_rp_date").year if (time_config and hasattr(time_config.get("current_rp_date"), "year")) else 2024),
+                        "year": time_config.get("current_rp_date", {}).year if time_config else 2024,
                         "primary_winner": True  # Assume they're a valid candidate if performing actions
                     }
                     print(f"DEBUG: Created fallback candidate object: {candidate['name']} ({candidate['party']})")
@@ -665,15 +642,14 @@ class PresCampaignActions(commands.Cog):
 
             print(f"DEBUG: Adding momentum for {candidate.get('name')} ({party_key}) in {state_name}")
 
-            # Normalize and ensure state momentum entry exists
-            state_key = str(state_name).upper()
-            state_momentum = momentum_config.setdefault("state_momentum", {})
-            if state_key not in state_momentum or not isinstance(state_momentum.get(state_key), dict):
-                state_momentum[state_key] = {"Republican": 0.0, "Democrat": 0.0, "Independent": 0.0}
+            # Validate state name exists in momentum config
+            if state_name not in momentum_config["state_momentum"]:
+                print(f"ERROR: State {state_name} not found in momentum config")
+                return
 
             # Calculate campaign effectiveness multiplier based on current momentum
-            current_momentum = state_momentum.get(state_key, {}).get(party_key, 0.0)
-            campaign_multiplier = momentum_cog._calculate_momentum_campaign_multiplier(state_key, party_key, momentum_config)
+            current_momentum = momentum_config["state_momentum"].get(state_name, {}).get(party_key, 0.0)
+            campaign_multiplier = momentum_cog._calculate_momentum_campaign_multiplier(state_name, party_key, momentum_config)
 
             # Apply momentum multiplier to the original campaign points
             boosted_points = points_gained * campaign_multiplier
@@ -691,7 +667,7 @@ class PresCampaignActions(commands.Cog):
 
             # Check for auto-collapse and apply if needed
             final_momentum, collapsed = momentum_cog._check_and_apply_auto_collapse(
-                momentum_col, guild_id, state_key, party_key, new_momentum
+                momentum_col, guild_id, state_name, party_key, new_momentum
             )
 
             if collapsed:
@@ -702,8 +678,8 @@ class PresCampaignActions(commands.Cog):
                     {"guild_id": guild_id},
                     {
                         "$set": {
-                            f"state_momentum.{state_key}.{party_key}": final_momentum,
-                            f"state_momentum.{state_key}.last_updated": datetime.utcnow()
+                            f"state_momentum.{state_name}.{party_key}": final_momentum,
+                            f"state_momentum.{state_name}.last_updated": datetime.utcnow()
                         }
                     }
                 )
@@ -712,7 +688,7 @@ class PresCampaignActions(commands.Cog):
                 # Log the momentum gain event
                 if momentum_gained > 0.1:  # Only log significant gains
                     momentum_cog._add_momentum_event(
-                        momentum_col, guild_id, state_key, party_key,
+                        momentum_col, guild_id, state_name, party_key,
                         momentum_gained, f"Presidential campaign action (+{points_gained:.1f} pts)", user_id
                     )
                     print(f"DEBUG: Momentum event logged for {party_key} in {state_name}")
@@ -910,8 +886,8 @@ class PresCampaignActions(commands.Cog):
         return final_percentages
 
     # State autocomplete for all commands
-    @pres_campaign_group.command(
-        name="canvassing",
+    @app_commands.command(
+        name="pres_canvassing",
         description="Presidential door-to-door campaigning in a U.S. state (0.1% points, 1 stamina)"
     )
     @app_commands.describe(
@@ -947,9 +923,9 @@ class PresCampaignActions(commands.Cog):
 
         # Check if in campaign phase
         time_col, time_config = self._get_time_config(interaction.guild.id)
-        if not time_config or time_config.get("current_phase", "") not in ["Primary Campaign", "General Campaign"]:
+        if not time_config or time_config.get("current_phase", "") not in ["Signups", "Primary Campaign", "General Campaign"]:
             await interaction.response.send_message(
-                "❌ Presidential canvassing can only be done during campaign phases.",
+                "❌ Presidential canvassing can only be done during signups and campaign phases.",
                 ephemeral=True
             )
             return
@@ -1026,8 +1002,8 @@ class PresCampaignActions(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    @pres_campaign_group.command(
-        name="donor",
+    @app_commands.command(
+        name="pres_donor",
         description="Presidential donor meeting in a U.S. state (1000 characters = 1% points, 5 corruption)"
     )
     @app_commands.describe(
@@ -1093,9 +1069,9 @@ class PresCampaignActions(commands.Cog):
 
         # Check if in campaign phase
         time_col, time_config = self._get_time_config(interaction.guild.id)
-        if not time_config or time_config["current_phase"] not in ["Primary Campaign", "General Campaign"]:
+        if not time_config or time_config["current_phase"] not in ["Signups", "Primary Campaign", "General Campaign"]:
             await interaction.response.send_message(
-                "❌ Presidential donor appeals can only be made during campaign phases.",
+                "❌ Presidential donor appeals can only be made during signups and campaign phases.",
                 ephemeral=True
             )
             return
@@ -1141,7 +1117,7 @@ class PresCampaignActions(commands.Cog):
             f"• Minimum 400 characters\n"
             f"• Maximum 3000 characters\n"
             f"• Reply within 5 minutes\n\n"
-            f"**Effect:** Up to 3% polling boost based on length, +5 corruption, -5 stamina",
+            f"**Effect:** Up to 3% polling boost based on length, +5 corruption, -1.5 stamina",
             ephemeral=False
         )
 
@@ -1223,9 +1199,9 @@ class PresCampaignActions(commands.Cog):
                 content=f"⏰ **{candidate['name']}**, your donor appeal timed out. Please use `/pres_donor` again and reply with your appeal within 5 minutes."
             )
 
-    @pres_campaign_group.command(
-        name="ad",
-        description="Presidential campaign video ad in a U.S. state (0.1-0.15% points, 3 stamina)"
+    @app_commands.command(
+        name="pres_ad",
+        description="Presidential campaign video ad in a U.S. state (0.2-0.3% points, 1.5 stamina)"
     )
     @app_commands.describe(
         state="U.S. state for video ad",
@@ -1253,9 +1229,9 @@ class PresCampaignActions(commands.Cog):
 
         # Check if in campaign phase
         time_col, time_config = self._get_time_config(interaction.guild.id)
-        if not time_config or time_config.get("current_phase", "") not in ["Primary Campaign", "General Campaign"]:
+        if not time_config or time_config.get("current_phase", "") not in ["Signups", "Primary Campaign", "General Campaign"]:
             await interaction.response.send_message(
-                "❌ Presidential campaign ads can only be created during campaign phases.",
+                "❌ Presidential campaign ads can only be created during signups and campaign phases.",
                 ephemeral=True
             )
             return
@@ -1276,9 +1252,9 @@ class PresCampaignActions(commands.Cog):
             return
 
         # Check stamina
-        if target_candidate.get("stamina", 200) < 3:
+        if target_candidate.get("stamina", 200) < 5:
             await interaction.response.send_message(
-                f"❌ {target_candidate['name']} doesn't have enough stamina! They need at least 3 stamina to create an ad.",
+                f"❌ {target_candidate['name']} doesn't have enough stamina! They need at least 5 stamina to create an ad.",
                 ephemeral=True
             )
             return
@@ -1303,7 +1279,7 @@ class PresCampaignActions(commands.Cog):
             f"• Video file (MP4, MOV, AVI, etc.)\n"
             f"• Maximum size: 25MB\n"
             f"• Reply within 5 minutes\n\n"
-            f"**Effect:** 0.2-0.3% polling boost, -3 stamina",
+            f"**Effect:** 0.2-0.3% polling boost, -1.5 stamina",
             ephemeral=False
         )
 
@@ -1332,12 +1308,12 @@ class PresCampaignActions(commands.Cog):
                 await reply_message.reply("❌ Video file too large! Maximum size is 25MB.")
                 return
 
-            # Random polling boost between 0.1% and 0.15% (halved)
-            polling_boost = random.uniform(0.1, 0.15)
+            # Random polling boost between 0.2% and 0.3%
+            polling_boost = random.uniform(0.2, 0.3)
 
             # Update target candidate stats
             self._update_presidential_candidate_stats(target_signups_col, interaction.guild.id, target_candidate["user_id"],
-                                                     state_upper, polling_boost=polling_boost, stamina_cost=3,
+                                                     state_upper, polling_boost=polling_boost, stamina_cost=5,
                                                      candidate_data=target_candidate, action_user_id=interaction.user.id)
 
             # Transfer points to all_winners system for proper tracking
@@ -1355,7 +1331,7 @@ class PresCampaignActions(commands.Cog):
 
             embed.add_field(
                 name="📊 Ad Performance",
-                value=f"**Target:** {target}\n**State:** {state_upper}\n**State Points:** +{polling_boost:.2f}\n**Stamina Cost:** -3",
+                value=f"**Target:** {target}\n**State:** {state_upper}\n**State Points:** +{polling_boost:.2f}\n**Stamina Cost:** -1.5",
                 inline=True
             )
 
@@ -1369,7 +1345,7 @@ class PresCampaignActions(commands.Cog):
             current_stamina = target_candidate.get("stamina", 0) if isinstance(target_candidate, dict) else 0
             embed.add_field(
                 name="⚡ Target's Current Stamina",
-                value=f"{current_stamina - 3:.1f}/300",
+                value=f"{current_stamina - 1.5:.1f}/300",
                 inline=True
             )
 
@@ -1379,12 +1355,12 @@ class PresCampaignActions(commands.Cog):
 
         except asyncio.TimeoutError:
             await interaction.edit_original_response(
-                content=f"⏰ **{candidate['name']}**, your ad creation timed out. Please use `/pres_ad` again and reply with your video within 5 minutes."
+                content=f"⏰ **{candidate['name']}**, your ad creation timed out. Please use `/pres_ad` again and reply with your ad within 5 minutes."
             )
 
-    @pres_campaign_group.command(
-        name="poster",
-        description="Presidential campaign poster in a U.S. state (0.05-0.1% points, 2 stamina)"
+    @app_commands.command(
+        name="pres_poster",
+        description="Presidential campaign poster in a U.S. state (0.1-0.2% points, 1 stamina)"
     )
     @app_commands.describe(
         state="U.S. state for campaign poster",
@@ -1468,9 +1444,9 @@ class PresCampaignActions(commands.Cog):
 
             # Check if in campaign phase
             time_col, time_config = self._get_time_config(interaction.guild.id)
-            if not time_config or time_config.get("current_phase", "") not in ["Primary Campaign", "General Campaign"]:
+            if not time_config or time_config.get("current_phase", "") not in ["Signups", "Primary Campaign", "General Campaign"]:
                 await interaction.followup.send(
-                    "❌ Presidential campaign posters can only be created during campaign phases.",
+                    "❌ Presidential campaign posters can only be created during signups and campaign phases.",
                     ephemeral=True
                 )
                 return
@@ -1495,9 +1471,9 @@ class PresCampaignActions(commands.Cog):
 
             # Check stamina with safe access and default values
             current_stamina = target_candidate.get("stamina", 300)
-            if not isinstance(current_stamina, (int, float)) or current_stamina < 2:
+            if not isinstance(current_stamina, (int, float)) or current_stamina < 4:
                 await interaction.followup.send(
-                    f"❌ {target_candidate.get('name', 'Candidate')} doesn't have enough stamina! They need at least 2 stamina to create a poster.",
+                    f"❌ {target_candidate.get('name', 'Candidate')} doesn't have enough stamina! They need at least 4 stamina to create a poster.",
                     ephemeral=True
                 )
                 return
@@ -1529,8 +1505,8 @@ class PresCampaignActions(commands.Cog):
                 )
                 return
 
-            # Random polling boost between 0.05% and 0.1% (halved)
-            polling_boost = random.uniform(0.05, 0.1)
+            # Random polling boost between 0.1% and 0.2%
+            polling_boost = random.uniform(0.1, 0.2)
 
             # Safely get target user ID
             target_user_id = target_candidate.get("user_id")
@@ -1543,7 +1519,7 @@ class PresCampaignActions(commands.Cog):
 
             # Update target candidate stats
             self._update_presidential_candidate_stats(target_signups_col, interaction.guild.id, target_user_id,
-                                                     state_upper, polling_boost=polling_boost, stamina_cost=2,
+                                                     state_upper, polling_boost=polling_boost, stamina_cost=4,
                                                      candidate_data=target_candidate, action_user_id=interaction.user.id)
 
             # For general campaign only, transfer points to all_winners system
@@ -1567,7 +1543,7 @@ class PresCampaignActions(commands.Cog):
 
             embed.add_field(
                 name="📊 Poster Impact",
-                value=f"**Target:** {target_name}\n**State:** {state_upper}\n**State Points:** +{polling_boost:.2f}\n**Stamina Cost:** -2",
+                value=f"**Target:** {target_name}\n**State:** {state_upper}\n**State Points:** +{polling_boost:.2f}\n**Stamina Cost:** -1",
                 inline=True
             )
 
@@ -1578,7 +1554,7 @@ class PresCampaignActions(commands.Cog):
             )
 
             # Safe stamina display
-            remaining_stamina = max(0, current_stamina - 2)
+            remaining_stamina = max(0, current_stamina - 1)
             embed.add_field(
                 name="⚡ Target's Current Stamina",
                 value=f"{remaining_stamina}/300",
@@ -1606,8 +1582,8 @@ class PresCampaignActions(commands.Cog):
                 # If followup also fails, just log it
                 print("Failed to send error message via followup")
 
-    @pres_campaign_group.command(
-        name="speech",
+    @app_commands.command(
+        name="pres_speech",
         description="Give a presidential campaign speech in a U.S. state with ideology alignment bonus"
     )
     @app_commands.describe(
@@ -1682,9 +1658,9 @@ class PresCampaignActions(commands.Cog):
 
         # Check if in campaign phase
         time_col, time_config = self._get_time_config(interaction.guild.id)
-        if not time_config or time_config["current_phase"] not in ["Primary Campaign", "General Campaign"]:
+        if not time_config or time_config["current_phase"] not in ["Signups", "Primary Campaign", "General Campaign"]:
             await interaction.response.send_message(
-                "❌ Presidential speeches can only be given during campaign phases.",
+                "❌ Presidential speeches can only be given during signups and campaign phases.",
                 ephemeral=True
             )
             return
@@ -1739,8 +1715,8 @@ class PresCampaignActions(commands.Cog):
             f"**Requirements:**\n"
             f"• 600-3000 characters\n"
             f"• Reply within 5 minutes\n\n"
-            f"**Effect:** Up to 1.5% polling boost based on length, -6 stamina\n"
-            f"**Potential Bonus:** {'✅ Ideology match (+0.25%)' if ideology_match else '⚠️ No ideology match (+0.0%)'}",
+            f"**Effect:** Up to 1.5% polling boost based on length, -2.25 stamina\n"
+            f"**Potential Bonus:** {'✅ Ideology match (+0.5%)' if ideology_match else '⚠️ No ideology match (+0.0%)'}",
             ephemeral=False
         )
 
@@ -1774,7 +1750,7 @@ class PresCampaignActions(commands.Cog):
             # Check for ideology match bonus
             state_data = STATE_DATA.get(state_upper, {})
             state_ideology = state_data.get('ideology', '')
-            ideology_bonus = 0.25 if state_ideology.lower() == ideology.lower() else 0.0
+            ideology_bonus = 0.5 if state_ideology.lower() == ideology.lower() else 0.0
 
             # Total polling boost
             polling_boost = base_polling_boost + ideology_bonus
@@ -1836,16 +1812,65 @@ class PresCampaignActions(commands.Cog):
                 content=f"❌ An error occurred while processing your speech. Please try again."
             )
 
-    # State autocomplete for all commands - need to reference the group commands
-    async def state_autocomplete_generic(self, interaction: discord.Interaction, current: str):
+    # State autocomplete for all commands
+    @pres_canvassing.autocomplete("state")
+    async def pres_canvassing_state_autocomplete(self, interaction: discord.Interaction, current: str):
+        """Autocomplete for state parameter"""
         states = list(PRESIDENTIAL_STATE_DATA.keys())
-        filtered_states = [state for state in states if current.upper() in state.upper()]
-        return [app_commands.Choice(name=state, value=state) for state in filtered_states[:25]]
-    
-    async def target_autocomplete_generic(self, interaction: discord.Interaction, current: str):
+        return [app_commands.Choice(name=state.title(), value=state)
+                for state in states if current.upper() in state][:25]
+
+    @pres_donor.autocomplete("state")
+    async def pres_donor_state_autocomplete(self, interaction: discord.Interaction, current: str):
+        """Autocomplete for state parameter"""
+        states = list(PRESIDENTIAL_STATE_DATA.keys())
+        return [app_commands.Choice(name=state.title(), value=state)
+                for state in states if current.upper() in state][:25]
+
+    @pres_ad.autocomplete("state")
+    async def pres_ad_state_autocomplete(self, interaction: discord.Interaction, current: str):
+        """Autocomplete for state parameter"""
+        states = list(PRESIDENTIAL_STATE_DATA.keys())
+        return [app_commands.Choice(name=state.title(), value=state)
+                for state in states if current.upper() in state][:25]
+
+    @pres_poster.autocomplete("state")
+    async def pres_poster_state_autocomplete(self, interaction: discord.Interaction, current: str):
+        """Autocomplete for state parameter"""
+        states = list(PRESIDENTIAL_STATE_DATA.keys())
+        return [app_commands.Choice(name=state.title(), value=state)
+                for state in states if current.upper() in state][:25]
+
+    @pres_speech.autocomplete("state")
+    async def pres_speech_state_autocomplete(self, interaction: discord.Interaction, current: str):
+        """Autocomplete for state parameter"""
+        states = list(PRESIDENTIAL_STATE_DATA.keys())
+        return [app_commands.Choice(name=state.title(), value=state)
+                for state in states if current.upper() in state][:25]
+
+    # Target autocomplete for all commands
+    @pres_canvassing.autocomplete("target")
+    async def target_autocomplete_canvassing(self, interaction: discord.Interaction, current: str):
         return await self._get_presidential_candidate_choices(interaction, current)
-    
-    async def ideology_autocomplete_generic(self, interaction: discord.Interaction, current: str):
+
+    @pres_donor.autocomplete("target")
+    async def target_autocomplete_donor(self, interaction: discord.Interaction, current: str):
+        return await self._get_presidential_candidate_choices(interaction, current)
+
+    @pres_ad.autocomplete("target")
+    async def target_autocomplete_ad(self, interaction: discord.Interaction, current: str):
+        return await self._get_presidential_candidate_choices(interaction, current)
+
+    @pres_poster.autocomplete("target")
+    async def target_autocomplete_poster(self, interaction: discord.Interaction, current: str):
+        return await self._get_presidential_candidate_choices(interaction, current)
+
+    @pres_speech.autocomplete("target")
+    async def target_autocomplete_speech(self, interaction: discord.Interaction, current: str):
+        return await self._get_presidential_candidate_choices(interaction, current)
+
+    @pres_speech.autocomplete("ideology")
+    async def ideology_autocomplete_speech(self, interaction: discord.Interaction, current: str):
         from .ideology import STATE_DATA
         ideologies = set()
         for state_data in STATE_DATA.values():
@@ -1856,50 +1881,7 @@ class PresCampaignActions(commands.Cog):
         filtered_ideologies = [ideology for ideology in ideology_list if current.lower() in ideology.lower()]
         return [app_commands.Choice(name=ideology, value=ideology) for ideology in filtered_ideologies[:25]]
 
-    # Set up autocomplete for group commands
-    def setup_autocomplete(self):
-        try:
-            # Set up autocomplete for canvassing
-            canvassing_cmd = pres_campaign_group.get_command('canvassing')
-            if canvassing_cmd:
-                canvassing_cmd.autocomplete('state')(self.state_autocomplete_generic)
-                canvassing_cmd.autocomplete('target')(self.target_autocomplete_generic)
 
-            # Set up autocomplete for donor
-            donor_cmd = pres_campaign_group.get_command('donor')
-            if donor_cmd:
-                donor_cmd.autocomplete('state')(self.state_autocomplete_generic)
-                donor_cmd.autocomplete('target')(self.target_autocomplete_generic)
-
-            # Set up autocomplete for ad
-            ad_cmd = pres_campaign_group.get_command('ad')
-            if ad_cmd:
-                ad_cmd.autocomplete('state')(self.state_autocomplete_generic)
-                ad_cmd.autocomplete('target')(self.target_autocomplete_generic)
-
-            # Set up autocomplete for poster
-            poster_cmd = pres_campaign_group.get_command('poster')
-            if poster_cmd:
-                poster_cmd.autocomplete('state')(self.state_autocomplete_generic)
-                poster_cmd.autocomplete('target')(self.target_autocomplete_generic)
-
-            # Set up autocomplete for speech
-            speech_cmd = pres_campaign_group.get_command('speech')
-            if speech_cmd:
-                speech_cmd.autocomplete('state')(self.state_autocomplete_generic)
-                speech_cmd.autocomplete('ideology')(self.ideology_autocomplete_generic)
-                speech_cmd.autocomplete('target')(self.target_autocomplete_generic)
-
-            # Set up autocomplete for polls
-            media_poll_cmd = pres_poll_group.get_command('media_poll')
-            if media_poll_cmd:
-                media_poll_cmd.autocomplete('candidate_name')(self.target_autocomplete_generic)
-
-            print("Autocomplete setup completed successfully")
-        except Exception as e:
-            print(f"Error setting up autocomplete: {e}")
-            # Continue without autocomplete rather than failing completely
-    
 
     async def _get_presidential_candidate_choices(self, interaction: discord.Interaction, current: str):
         """Get presidential candidate choices for autocomplete"""
@@ -1908,117 +1890,66 @@ class PresCampaignActions(commands.Cog):
             time_col, time_config = self._get_time_config(interaction.guild.id)
 
             if not time_config:
-                print("No time config found")
                 return []
 
             current_year = time_config["current_rp_date"].year
             current_phase = time_config.get("current_phase", "")
             candidate_names = []
 
-            print(f"Debug: Current phase: {current_phase}, Current year: {current_year}")
-
             if current_phase == "General Campaign":
-                # For general campaign, only show primary winners who advanced to general election
-                print(f"General Campaign phase detected, showing only primary winners")
+                # For general campaign, get primary winners
+                primary_year = current_year - 1 if current_year % 2 == 0 else current_year
 
-                # First, try to get from presidential winners collection
+                # Check presidential winners collection
                 winners_col, winners_config = self._get_presidential_winners_config(interaction.guild.id)
-
-                print(f"Debug: winners_config type: {type(winners_config)}")
-                print(f"Debug: winners_config content: {winners_config}")
-
                 if winners_config and winners_config.get("winners"):
-                    party_winners = winners_config.get("winners", {})
-                    print(f"Debug: party_winners type: {type(party_winners)}")
-                    print(f"Debug: party_winners content: {party_winners}")
+                    winners_data = winners_config.get("winners", {})
 
-                    if isinstance(party_winners, dict):
-                        for party, winner_name in party_winners.items():
-                            print(f"Debug: Processing party: {party}, winner_name type: {type(winner_name)}, value: {winner_name}")
-                            if winner_name and isinstance(winner_name, str):
+                    if isinstance(winners_data, dict):
+                        # Old format: {party: candidate_name}
+                        for party, winner_name in winners_data.items():
+                            if isinstance(winner_name, str):
                                 candidate_names.append(winner_name)
-                                print(f"Added general campaign candidate from presidential_winners: {winner_name}")
-                    else:
-                        print(f"Error: party_winners is not a dict, it's {type(party_winners)}: {party_winners}")
+                    elif isinstance(winners_data, list):
+                        # New format: list of winner objects
+                        for winner in winners_data:
+                            if (isinstance(winner, dict) and
+                                winner.get("primary_winner", False) and
+                                winner.get("year") == primary_year and
+                                winner.get("office") in ["President", "Vice President"]):
+                                name = winner.get("name")
+                                if name:
+                                    candidate_names.append(name)
 
-                # If no winners from presidential_winners, check all_winners system as fallback
+                # Fallback to all_winners system
                 if not candidate_names:
                     all_winners_col = self.bot.db["winners"]
                     all_winners_config = all_winners_col.find_one({"guild_id": interaction.guild.id})
 
-                    print(f"Debug: all_winners_config type: {type(all_winners_config)}")
-
                     if all_winners_config:
-                        primary_year = current_year - 1 if current_year % 2 == 0 else current_year
-                        print(f"Debug: primary_year calculated as: {primary_year}")
-
                         winners_list = all_winners_config.get("winners", [])
-                        print(f"Debug: winners_list type: {type(winners_list)}, length: {len(winners_list) if isinstance(winners_list, list) else 'N/A'}")
-
-                        if isinstance(winners_list, list):
-                            for i, winner in enumerate(winners_list):
-                                print(f"Debug: Processing winner {i}: type: {type(winner)}, content: {winner}")
-
-                                # Ensure winner is a dictionary before accessing dict methods
-                                if isinstance(winner, dict):
-                                    office = winner.get("office")
-                                    primary_winner = winner.get("primary_winner", False)
-                                    year = winner.get("year")
-                                    candidate_name = winner.get("candidate")
-
-                                    print(f"Debug: office: {office}, primary_winner: {primary_winner}, year: {year}, candidate: {candidate_name}")
-
-                                    if (office in ["President", "Vice President"] and
-                                        primary_winner and
-                                        year == primary_year and
-                                        candidate_name):
-                                        candidate_names.append(candidate_name)
-                                        print(f"Added general campaign candidate from all_winners: {candidate_name}")
-                                else:
-                                    print(f"Error: winner is not a dict, it's {type(winner)}: {winner}")
-
-                        else:
-                            print(f"Error: winners_list is not a list, it's {type(winners_list)}: {winners_list}")
+                        for winner in winners_list:
+                            if (isinstance(winner, dict) and
+                                winner.get("office") in ["President", "Vice President"] and
+                                winner.get("primary_winner", False) and
+                                winner.get("year") == primary_year):
+                                name = winner.get("candidate")
+                                if name:
+                                    candidate_names.append(name)
 
             else:
-                # For primary campaign or other phases, show all registered candidates
-                print(f"Primary/Other phase detected ({current_phase}), showing all registered candidates")
-
+                # For primary campaign, show all registered candidates
                 signups_col, signups_config = self._get_presidential_config(interaction.guild.id)
 
-                print(f"Debug: signups_config type: {type(signups_config)}")
-
                 if signups_config:
-                    target_year = current_year
-
                     candidates_list = signups_config.get("candidates", [])
-                    print(f"Debug: candidates_list type: {type(candidates_list)}, length: {len(candidates_list) if isinstance(candidates_list, list) else 'N/A'}")
-
-                    if isinstance(candidates_list, list):
-                        for i, candidate in enumerate(candidates_list):
-                            print(f"Debug: Processing candidate {i}: type: {type(candidate)}, content: {candidate}")
-
-                            try:
-                                # Ensure candidate is a dictionary before accessing dict methods
-                                if isinstance(candidate, dict):
-                                    year = candidate.get("year")
-                                    office = candidate.get("office")
-                                    name = candidate.get("name")
-
-                                    print(f"Debug: year: {year}, office: {office}, name: {name}")
-
-                                    if (year == target_year and
-                                        office in ["President", "Vice President"] and
-                                        name):
-                                        candidate_names.append(name)
-                                        print(f"Added primary campaign candidate: {name}")
-                                else:
-                                    print(f"Error: candidate is not a dict, it's {type(candidate)}: {candidate}")
-                            except (KeyError, TypeError, AttributeError) as e:
-                                print(f"Error processing candidate: {candidate}, error: {e}")
-                                continue
-                    else:
-                        print(f"Error: candidates_list is not a list, it's {type(candidates_list)}: {candidates_list}")
+                    for candidate in candidates_list:
+                        if (isinstance(candidate, dict) and
+                            candidate.get("year") == current_year and
+                            candidate.get("office") in ["President", "Vice President"]):
+                            name = candidate.get("name")
+                            if name:
+                                candidate_names.append(name)
 
             # Remove duplicates and filter by current input
             candidate_names = list(set(candidate_names))
@@ -2029,18 +1960,17 @@ class PresCampaignActions(commands.Cog):
             else:
                 filtered_names = candidate_names
 
-            print(f"Final result - Phase: {current_phase}, Found {len(filtered_names)} candidates for autocomplete: {filtered_names[:5]}")
+            # Sort for better user experience
+            filtered_names.sort()
 
             return [app_commands.Choice(name=name, value=name) for name in filtered_names[:25]]
 
         except Exception as e:
             print(f"Error in _get_presidential_candidate_choices: {e}")
-            import traceback
-            traceback.print_exc()
             return []
 
-    @pres_campaign_group.command(
-        name="status",
+    @app_commands.command(
+        name="pres_campaign_status",
         description="View your presidential campaign statistics and available actions"
     )
     async def pres_campaign_status(self, interaction: discord.Interaction):
@@ -2192,8 +2122,8 @@ class PresCampaignActions(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @pres_admin_group.command(
-        name="view_campaign_points",
+    @app_commands.command(
+        name="admin_view_pres_campaign_points",
         description="View all presidential candidate points (Admin only)"
     )
     @app_commands.describe(
@@ -2393,8 +2323,8 @@ class PresCampaignActions(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @pres_admin_group.command(
-        name="add_points",
+    @app_commands.command(
+        name="admin_add_pres_points",
         description="Directly add campaign points to a presidential candidate (Admin only)"
     )
     @app_commands.describe(
@@ -2521,11 +2451,19 @@ class PresCampaignActions(commands.Cog):
 
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    # Note: Autocomplete for group commands needs to be set up differently
-    # This will be handled in the setup function
+    # Autocomplete for admin commands
+    @admin_add_pres_points.autocomplete("candidate_name")
+    async def candidate_autocomplete_admin(self, interaction: discord.Interaction, current: str):
+        return await self._get_presidential_candidate_choices(interaction, current)
 
-    @pres_poll_group.command(
-        name="npc_poll",
+    @admin_add_pres_points.autocomplete("state")
+    async def state_autocomplete_admin(self, interaction: discord.Interaction, current: str):
+        states = list(PRESIDENTIAL_STATE_DATA.keys())
+        filtered_states = [state for state in states if current.upper() in state.upper()]
+        return [app_commands.Choice(name=state, value=state) for state in filtered_states[:25]]
+
+    @app_commands.command(
+        name="pres_poll",
         description="Conduct an NPC poll for a presidential candidate (7% margin of error)"
     )
     @app_commands.describe(candidate_name="The presidential candidate to poll (leave blank to poll yourself)")
@@ -2781,8 +2719,8 @@ class PresCampaignActions(commands.Cog):
         # Ensure reasonable bounds for national polling
         return max(20.0, min(80.0, national_percentage))
 
-    @pres_poll_group.command(
-        name="media_poll",
+    @app_commands.command(
+        name="pres_media_poll",
         description="Conduct a media presidential poll (10% margin of error, free, anyone can use)"
     )
     @app_commands.describe(candidate_name="The presidential candidate to poll")
@@ -2872,82 +2810,7 @@ class PresCampaignActions(commands.Cog):
 
         await interaction.response.send_message(embed=embed)
 
-    
 
-    @pres_poll_group.command(
-        name="swing_states",
-        description="List 10 closest presidential states by current margin"
-    )
-    async def pres_swing_states(self, interaction: discord.Interaction):
-        try:
-            # Build a temporary per-state margin using base data and any state_points from current presidential candidates
-            from .presidential_winners import PRESIDENTIAL_STATE_DATA
-
-            # Gather current presidential general candidates from winners
-            winners_col = self.bot.db["winners"]
-            winners_config = winners_col.find_one({"guild_id": interaction.guild.id}) or {}
-            time_col, time_config = self._get_time_config(interaction.guild.id)
-            current_year = time_config["current_rp_date"].year if time_config else 2024
-
-            # Filter presidential general candidates in current year
-            candidates = [
-                w for w in (winners_config.get("winners", []) or [])
-                if w.get("year") == current_year and w.get("office") == "President" and w.get("primary_winner", False)
-            ]
-
-            # Map party to alignment key
-            def party_key(p: str) -> str:
-                pl = (p or "").lower()
-                if "rep" in pl:
-                    return "republican"
-                if "dem" in pl:
-                    return "democrat"
-                return "other"
-
-            # Aggregate per-state boosts by party
-            state_party_boost = {}
-            for cand in candidates:
-                sp = cand.get("state_points", {}) or {}
-                pk = party_key(cand.get("party", ""))
-                for state_name, pts in sp.items():
-                    state_party_boost.setdefault(state_name, {"republican": 0.0, "democrat": 0.0, "other": 0.0})
-                    state_party_boost[state_name][pk] += float(pts)
-
-            # Compute margins per state using base + boosts
-            margins = []  # (abs_margin, desc)
-            for state_name, base in PRESIDENTIAL_STATE_DATA.items():
-                boosts = state_party_boost.get(state_name, {"republican": 0.0, "democrat": 0.0, "other": 0.0})
-                rep = base.get("republican", 33.0) + boosts.get("republican", 0.0)
-                dem = base.get("democrat", 33.0) + boosts.get("democrat", 0.0)
-                oth = base.get("other", 34.0) + boosts.get("other", 0.0)
-
-                # Winner and runner-up among rep/dem only for margin
-                main_pairs = [("Republican", rep), ("Democrat", dem)]
-                main_pairs.sort(key=lambda x: x[1], reverse=True)
-                margin = main_pairs[0][1] - main_pairs[1][1]
-                leader = main_pairs[0][0]
-                margins.append((abs(margin), state_name, leader, margin, rep, dem, oth))
-
-            margins.sort(key=lambda x: x[0])
-            top = margins[:10]
-
-            embed = discord.Embed(
-                title="🎯 Closest Presidential States",
-                description="Top 10 states with the smallest Rep vs Dem margin",
-                color=discord.Color.purple(),
-                timestamp=datetime.utcnow()
-            )
-
-            for abs_margin, state_name, leader, margin, rep, dem, oth in top:
-                embed.add_field(
-                    name=f"{state_name.title()}",
-                    value=f"Leader: {leader} (margin {margin:.2f}%)\nRep {rep:.2f}% • Dem {dem:.2f}% • Other {oth:.2f}%",
-                    inline=False
-                )
-
-            await interaction.response.send_message(embed=embed)
-        except Exception as e:
-            await interaction.response.send_message(f"❌ Error computing swing states: {e}", ephemeral=True)
 
     def _calculate_presidential_polling_percentage(self, guild_id: int, candidate_data: dict) -> float:
         """Calculate presidential polling percentage based on candidate data"""
@@ -2985,57 +2848,4 @@ class PresCampaignActions(commands.Cog):
 
 
 async def setup(bot):
-    # Store existing commands before any modifications
-    existing_commands_before = bot.tree.get_commands()
-    existing_names_before = [cmd.name for cmd in existing_commands_before]
-    print(f"PRES_CAMPAIGN_SETUP: Commands before setup: {existing_names_before}")
-    
-    cog = PresCampaignActions(bot)
-    cog.setup_autocomplete()  # Set up autocomplete after creating the cog
-
-    # Check if command groups are already registered, if not add them
-    existing_commands = bot.tree.get_commands()
-    existing_groups = [cmd.name for cmd in existing_commands if hasattr(cmd, 'name')]
-
-    # Only add groups if they don't exist
-    if 'pres_campaign' not in existing_groups:
-        try:
-            bot.tree.add_command(pres_campaign_group)
-            print("PRES_CAMPAIGN_SETUP: Added pres_campaign group")
-        except Exception as e:
-            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_campaign group: {e}")
-    else:
-        print("PRES_CAMPAIGN_SETUP: pres_campaign group already exists, skipping")
-
-    if 'pres_admin' not in existing_groups:
-        try:
-            bot.tree.add_command(pres_admin_group)
-            print("PRES_CAMPAIGN_SETUP: Added pres_admin group")
-        except Exception as e:
-            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_admin group: {e}")
-    else:
-        print("PRES_CAMPAIGN_SETUP: pres_admin group already exists, skipping")
-
-    if 'pres_poll' not in existing_groups:
-        try:
-            bot.tree.add_command(pres_poll_group)
-            print("PRES_CAMPAIGN_SETUP: Added pres_poll group")
-        except Exception as e:
-            print(f"PRES_CAMPAIGN_SETUP: Error adding pres_poll group: {e}")
-    else:
-        print("PRES_CAMPAIGN_SETUP: pres_poll group already exists, skipping")
-
-    # Verify that existing commands are still there
-    commands_after = bot.tree.get_commands()
-    names_after = [cmd.name for cmd in commands_after]
-    print(f"PRES_CAMPAIGN_SETUP: Commands after setup: {names_after}")
-    
-    # Check for target commands specifically
-    target_commands = ['view_general_campaign', 'admin_view_all_campaign_points']
-    for target in target_commands:
-        if target in names_after:
-            print(f"PRES_CAMPAIGN_SETUP: ✅ {target} preserved after setup")
-        else:
-            print(f"PRES_CAMPAIGN_SETUP: ❌ {target} LOST during setup")
-
-    await bot.add_cog(cog)
+    await bot.add_cog(PresCampaignActions(bot))
